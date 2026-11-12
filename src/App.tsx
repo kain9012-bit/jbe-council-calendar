@@ -166,41 +166,58 @@ const ScopeBar: React.FC<ScopeProps> = ({ data, body, setBody }) => {
   );
 };
 
-/* ---------- 한 줄 띠 — 달력에 없는 두 가지: 회기 몇째 날, 다음 교육위 ---------- */
+/* ---------- 한 줄 띠 — 회기 몇째 날 + 오늘 의회 일정(없으면 다음 회의) ---------- */
 const Hero: React.FC<{ data: Payload }> = ({ data }) => {
   const t = today();
   const s = sessionOn(data.sessions, t);
   const next = data.sessions.find((x) => x.start > t);
-  const nextEdu = visible(data.events, '교육위원회', false)
-    .filter((e) => e.start > t)
-    .sort((a, b) => a.start.localeCompare(b.start) || byTime(a, b))[0];
+  const all = visible(data.events, '', false);
+  const todays = onDay(all, t).sort(byTime);
+  // 회의체마다 첫 일정만, 나머지는 '외 ○건'
+  const firsts = todays.filter((e, i) => todays.findIndex((x) => x.body === e.body) === i);
+  const rest = todays.length - firsts.length;
+  const upcoming = all.filter((e) => e.start > t).sort((a, b) => a.start.localeCompare(b.start) || byTime(a, b))[0];
   const name = (x: { title: string }) => x.title.replace('전북특별자치도의회 ', '');
+  const item = (e: CEvent) => (
+    <span key={`${e.body}${e.time}${e.text}`} className="whitespace-nowrap">
+      <b>{short(e.body)}</b> <span className="tabular-nums">{/^\d/.test(e.time) ? e.time : ''}</span> {firstLine(e)}
+    </span>
+  );
   return (
-    <section className="flex flex-wrap items-center gap-x-3.5 gap-y-1 rounded-[12px] bg-[var(--nr-p2)] px-4 py-3 sm:px-5 text-white text-[14px] sm:text-[15px]">
-      <b className="nr-title text-[16px] sm:text-[17px] font-bold">
+    <section className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 rounded-[12px] bg-[var(--nr-p2)] px-4 py-3 sm:px-5 text-white text-[14px] sm:text-[15px] leading-[1.4]">
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
         {s ? (
           <>
-            {name(s)} <span className="text-[#ffd85c] tabular-nums">{daysBetween(s.start, t)}일째</span>
-            <span className="text-[13px] sm:text-[14px] opacity-70 tabular-nums"> / {daysBetween(s.start, s.end)}일간</span>
+            <b className="nr-title text-[16px] sm:text-[17px] leading-none translate-y-[1px]">{name(s)}</b>
+            <b className="nr-title text-[16px] sm:text-[17px] leading-none translate-y-[1px] text-[#ffd85c] tabular-nums">{daysBetween(s.start, t)}일째</b>
+            <span className="text-[13px] opacity-70 tabular-nums">/ {daysBetween(s.start, s.end)}일간</span>
           </>
         ) : next ? (
           <>
-            폐회 중 · 다음 회기 <span className="text-[#ffd85c] tabular-nums">{daysBetween(t, next.start) - 1}일 뒤</span>
-            <span className="text-[13px] sm:text-[14px] opacity-70 tabular-nums"> {name(next)} {md(next.start)}부터</span>
+            <b className="nr-title text-[16px] sm:text-[17px] leading-none translate-y-[1px]">폐회 중</b>
+            <span className="text-[13px] opacity-80 tabular-nums">다음 회기 {name(next)} {md(next.start)}부터 ({daysBetween(t, next.start) - 1}일 뒤)</span>
           </>
         ) : (
-          '폐회 중 · 등록된 다음 회기 없음'
+          <b className="nr-title text-[16px] sm:text-[17px] leading-none translate-y-[1px]">폐회 중</b>
         )}
-      </b>
+      </span>
       <span className="hidden sm:inline opacity-40" aria-hidden="true">|</span>
-      <span className="min-w-0">
-        <span className="opacity-75">다음 교육위</span>{' '}
-        {nextEdu ? (
+      <span className="min-w-0 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        {todays.length ? (
           <>
-            <b className="tabular-nums">{md(nextEdu.start)} {/^\d/.test(nextEdu.time) ? nextEdu.time : ''}</b> {firstLine(nextEdu)}
+            <span className="rounded-full bg-[#ffd85c] text-[#1d2550] px-2 h-[22px] inline-flex items-center text-[12px] font-bold">오늘</span>
+            {firsts.map(item)}
+            {rest > 0 && <span className="opacity-75 whitespace-nowrap">외 {rest}건</span>}
           </>
         ) : (
-          '등록된 일정 없음'
+          <>
+            <span className="opacity-75">오늘 회의 없음{upcoming ? ' ·' : ''}</span>
+            {upcoming && (
+              <span className="whitespace-nowrap">
+                <span className="opacity-75">다음</span> <b className="tabular-nums">{md(upcoming.start)}</b> {item(upcoming)}
+              </span>
+            )}
+          </>
         )}
       </span>
     </section>
