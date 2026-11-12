@@ -166,63 +166,43 @@ const ScopeBar: React.FC<ScopeProps> = ({ data, body, setBody }) => {
   );
 };
 
-/* ---------- 오늘 안내 상자 ---------- */
+/* ---------- 한 줄 띠 — 달력에 없는 두 가지: 회기 몇째 날, 다음 교육위 ---------- */
 const Hero: React.FC<{ data: Payload }> = ({ data }) => {
   const t = today();
   const s = sessionOn(data.sessions, t);
   const next = data.sessions.find((x) => x.start > t);
-  const edu = visible(data.events, '', false);
-  const todays = onDay(edu, t).sort(byTime);
-  const upcoming = edu.filter((e) => e.start > t && e.body === '교육위원회').sort((a, b) => a.start.localeCompare(b.start) || byTime(a, b))[0];
+  const nextEdu = visible(data.events, '교육위원회', false)
+    .filter((e) => e.start > t)
+    .sort((a, b) => a.start.localeCompare(b.start) || byTime(a, b))[0];
+  const name = (x: { title: string }) => x.title.replace('전북특별자치도의회 ', '');
   return (
-    <section className="overflow-hidden rounded-[16px] sm:rounded-[20px] bg-[var(--nr-p2)] text-white px-4 py-5 sm:px-10 sm:py-9">
-      <p className="text-[14px] text-white/75 tabular-nums">{md(t)} 오늘</p>
-      <h2 className="nr-title mt-1 text-[19px] sm:text-[28px] leading-snug">
+    <section className="flex flex-wrap items-center gap-x-3.5 gap-y-1 rounded-[12px] bg-[var(--nr-p2)] px-4 py-3 sm:px-5 text-white text-[14px] sm:text-[15px]">
+      <b className="nr-title text-[16px] sm:text-[17px] font-bold">
         {s ? (
           <>
-            {s.title.replace('전북특별자치도의회 ', '')} <em className="not-italic text-[#ffd85c] tabular-nums">{daysBetween(s.start, t)}일째</em>
-            <span className="text-white/70 text-[15px] sm:text-[22px] whitespace-nowrap"> / {daysBetween(s.start, s.end)}일간</span>
+            {name(s)} <span className="text-[#ffd85c] tabular-nums">{daysBetween(s.start, t)}일째</span>
+            <span className="text-[13px] sm:text-[14px] opacity-70 tabular-nums"> / {daysBetween(s.start, s.end)}일간</span>
           </>
         ) : next ? (
           <>
-            지금은 폐회 중 · 다음 회기{' '}
-            <em className="not-italic text-[#ffd85c] tabular-nums">{daysBetween(t, next.start) - 1}일 뒤</em>
+            폐회 중 · 다음 회기 <span className="text-[#ffd85c] tabular-nums">{daysBetween(t, next.start) - 1}일 뒤</span>
+            <span className="text-[13px] sm:text-[14px] opacity-70 tabular-nums"> {name(next)} {md(next.start)}부터</span>
           </>
         ) : (
-          '등록된 다음 회기 없음'
+          '폐회 중 · 등록된 다음 회기 없음'
         )}
-      </h2>
-      <p className="mt-1 text-[14px] text-white/75">
-        {s ? `${span(s.start, s.end)} · ${s.kind}` : next ? `${next.title.replace('전북특별자치도의회 ', '')} · ${span(next.start, next.end)}` : ''}
-      </p>
-      <div className="mt-4 sm:mt-5 grid gap-2 sm:gap-3 sm:grid-cols-2">
-        <div className="min-w-0 rounded-[12px] sm:rounded-[14px] bg-white/10 px-3 py-2.5 sm:px-4 sm:py-3">
-          <p className="text-[13px] font-bold text-white/70">오늘 교육청 관련 회의</p>
-          {todays.length ? (
-            <ul className="mt-1.5 space-y-1 text-[15px]">
-              {todays.map((e, i) => (
-                <li key={i} className="flex gap-2">
-                  <b className="shrink-0">{short(e.body)}</b>
-                  <span className="tabular-nums shrink-0 text-white/80">{e.time}</span>
-                  <span className="min-w-0 sm:truncate">{firstLine(e)}{e.text.includes('\n-') ? ` ${e.text.split('\n').filter((l) => l.startsWith('-')).map((l) => l.slice(1).trim()).join(', ')}` : ''}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-1.5 text-[15px] text-white/85">없음</p>
-          )}
-        </div>
-        <div className="min-w-0 rounded-[12px] sm:rounded-[14px] bg-white/10 px-3 py-2.5 sm:px-4 sm:py-3">
-          <p className="text-[13px] font-bold text-white/70">다음 교육위원회</p>
-          {upcoming ? (
-            <p className="mt-1.5 text-[15px]">
-              <b className="tabular-nums">{md(upcoming.start)} {upcoming.time}</b> {firstLine(upcoming)}
-            </p>
-          ) : (
-            <p className="mt-1.5 text-[15px] text-white/85">등록된 일정 없음</p>
-          )}
-        </div>
-      </div>
+      </b>
+      <span className="hidden sm:inline opacity-40" aria-hidden="true">|</span>
+      <span className="min-w-0">
+        <span className="opacity-75">다음 교육위</span>{' '}
+        {nextEdu ? (
+          <>
+            <b className="tabular-nums">{md(nextEdu.start)} {/^\d/.test(nextEdu.time) ? nextEdu.time : ''}</b> {firstLine(nextEdu)}
+          </>
+        ) : (
+          '등록된 일정 없음'
+        )}
+      </span>
     </section>
   );
 };
@@ -250,8 +230,8 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
   return (
     <>
       <PageTitle desc="회기와 교육위원회·본회의·예결특위(교육청 소관) 일정. 일일회의운영상황이 올라온 날은 그 내용이 우선">월간 달력</PageTitle>
-      <div className="mt-4 sm:mt-6"><Hero data={data} /></div>
-      <div className="mt-4 sm:mt-6"><ScopeBar {...p} /></div>
+      <div className="mt-4 sm:mt-5"><Hero data={data} /></div>
+      <div className="mt-3 sm:mt-4"><ScopeBar {...p} /></div>
       <div className="mt-4 sm:mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex items-center gap-1">
           <button type="button" onClick={() => move(-1)} aria-label="이전 달" className="grid place-items-center w-10 h-10 rounded-full border border-[var(--nr-line)] hover:border-[var(--nr-p3)]">
