@@ -7,17 +7,33 @@ export const Pill: React.FC<{ className: string; children: React.ReactNode }> = 
   <span className={`inline-flex items-center gap-1 h-[26px] px-2.5 rounded-full text-[13px] font-bold whitespace-nowrap ${className}`}>{children}</span>
 );
 
-/** 출처 표지 — 당일 운영상황(확정) / 의사일정(안) */
-export const SourcePill: React.FC<{ e: CEvent }> = ({ e }) =>
-  e.source.type === '당일' ? (
-    <Pill className="bg-[#eaf6ec] text-[#267337]">
-      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> 당일 운영상황
-    </Pill>
-  ) : (
-    <Pill className="bg-[var(--nr-bg)] text-[var(--nr-p3)]">
-      <FileText className="w-3.5 h-3.5" aria-hidden="true" /> 의사일정(안)
-    </Pill>
+/** 출처 표지 — 당일 운영상황(확정) / 의사일정(안). 휴대폰에서는 원문 링크를 겸함 */
+export const SourcePill: React.FC<{ e: CEvent }> = ({ e }) => {
+  const daily = e.source.type === '당일';
+  const cls = daily ? 'bg-[#eaf6ec] text-[#267337]' : 'bg-[var(--nr-bg)] text-[var(--nr-p3)]';
+  const body = (
+    <>
+      {daily ? <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> : <FileText className="w-3.5 h-3.5" aria-hidden="true" />}
+      {daily ? '당일 운영상황' : '의사일정(안)'}
+    </>
   );
+  return (
+    <>
+      <a
+        href={postUrl(e.source.board, e.source.id)}
+        target="_blank"
+        rel="noreferrer"
+        title={e.source.title}
+        className={`sm:hidden inline-flex items-center gap-1 h-[26px] px-2.5 rounded-full text-[13px] font-bold whitespace-nowrap ${cls}`}
+      >
+        {body}
+        <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+        <span className="sr-only">원문 보기(새 창)</span>
+      </a>
+      <span className="hidden sm:inline-flex"><Pill className={cls}>{body}</Pill></span>
+    </>
+  );
+};
 
 /** 일정 한 건 — 회의체·차수·시각·내용·출처 */
 export const EventCard: React.FC<{ e: CEvent; showDate?: boolean }> = ({ e, showDate }) => {
@@ -79,7 +95,7 @@ export const EventCard: React.FC<{ e: CEvent; showDate?: boolean }> = ({ e, show
           )}
         </div>
       )}
-      <p className="mt-3 text-[13px] text-slate-500">
+      <p className="hidden sm:block mt-3 text-[13px] text-slate-500">
         <a href={postUrl(e.source.board, e.source.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 hover:text-[var(--nr-p3)] underline underline-offset-2">
           {e.source.title}
           <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
