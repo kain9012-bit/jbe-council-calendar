@@ -234,12 +234,12 @@ export const SubLayout: React.FC<{ lnb: React.ReactNode; trail: string[]; childr
 );
 
 export const PageTitle: React.FC<{ children: React.ReactNode; desc?: React.ReactNode; right?: React.ReactNode }> = ({ children, desc, right }) => (
-  <div className="border-b border-[var(--nr-line)] pb-3 sm:pb-5 lg:pt-2">
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <h1 className="nr-title text-[24px] sm:text-[36px] leading-tight text-black">{children}</h1>
-      {right}
+  <div className="border-b border-[var(--nr-line)] pb-3 sm:pb-4 lg:pt-2">
+    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+      <h1 className="nr-title text-[24px] sm:text-[32px] leading-tight text-black shrink-0">{children}</h1>
+      {desc && <p className="hidden sm:block text-[14px] text-slate-500">{desc}</p>}
+      {right && <div className="ml-auto">{right}</div>}
     </div>
-    {desc && <p className="hidden sm:block mt-2 text-[15px] text-slate-600">{desc}</p>}
   </div>
 );
 
