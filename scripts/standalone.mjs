@@ -1,18 +1,11 @@
-// 단일 HTML 조립
-//  1) dist-standalone/index.html(자료 없는 틀)을 웹판 dist/standalone-template.html 로 복사 — 웹의 「내부망용 파일 받기」가 씀
-//  2) 지금 자료(public/data/schedule.json)를 넣은 완성본을 release/ 에 만듦 — 내부망에 바로 배포
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+// 내부망용 단일 파일 — 자료 없는 틀 그대로 (열 때마다 구글 시트에서 읽음)
+//  · dist/standalone-template.html : 웹의 「내부망용 파일 받기」가 내려 주는 파일
+//  · release/도의회_회의운영_달력.html : 내부망에 바로 배포할 파일 (한 번 배포하면 다시 받을 필요 없음)
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 
 const tpl = readFileSync('dist-standalone/index.html', 'utf8');
-const SLOT = '<script id="jbc-data" type="application/json">__JBC_DATA__</script>';
-if (!tpl.includes(SLOT)) throw new Error('틀에 자료 자리가 없음');
+if (!tpl.includes('docs.google.com/spreadsheets')) throw new Error('시트 읽기 코드가 없음');
 if (existsSync('dist')) copyFileSync('dist-standalone/index.html', 'dist/standalone-template.html');
-
-const data = readFileSync('public/data/schedule.json', 'utf8');
-const safe = JSON.stringify(JSON.parse(data)).replace(/</g, '\\u003c');
-const html = tpl.replace(SLOT, () => SLOT.replace('__JBC_DATA__', safe));
-const stamp = JSON.parse(data).generated.slice(0, 16).replace(/[-:]/g, '').replace('T', '_');
 mkdirSync('release', { recursive: true });
-const name = `release/도의회_회의운영_달력_${stamp}.html`;
-writeFileSync(name, html);
-console.log(`${name} (${(html.length / 1024 / 1024).toFixed(1)} MB)`);
+copyFileSync('dist-standalone/index.html', 'release/도의회_회의운영_달력.html');
+console.log(`release/도의회_회의운영_달력.html (${(tpl.length / 1024 / 1024).toFixed(1)} MB)`);

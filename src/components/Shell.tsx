@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUp, ArrowUpRight, Check, ChevronRight, Download, Home, Link2, X } from 'lucide-react';
 import { BOARD_DAILY, BOARD_PLAN, MONTHLY, STANDALONE, downloadStandalone, type Live } from '../lib/data';
+import { Lamp } from './Splash';
 
 /**
  * 전북교육청 누리집 하위 화면 틀 (기준: jbe-staff-tools-board Shell.tsx)
@@ -52,13 +53,34 @@ export const DownloadButton: React.FC<{ variant?: 'link' | 'block' | 'small' }> 
   );
 };
 
-const LIVE_LABEL: Record<Live, string> = { web: '', sheet: '구글 시트 연동', file: '파일에 담긴 자료', loading: '구글 시트 확인 중' };
+const LIVE_LABEL: Record<Live, string> = { web: '', sheet: '구글 시트 연결됨', error: '구글 시트 연결 안 됨', loading: '구글 시트 연결 중' };
 
-export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live }> = ({ active, asOf, live = 'web' }) => (
+/** 내부망 파일 — 구글 시트 연결 표시등 (초록·빨강·주황) */
+export const SheetStatus: React.FC<{ live: Live; asOf?: string; onRetry?: () => void }> = ({ live, asOf, onRetry }) => (
+  <span
+    role="status"
+    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px] sm:text-[14px] font-bold whitespace-nowrap ${
+      live === 'sheet'
+        ? 'border-[#bfe5c8] bg-[#eaf6ec] text-[#1f6a33]'
+        : live === 'error'
+          ? 'border-[#f5c2c0] bg-[#fdeeee] text-[#b42318]'
+          : 'border-[#f3d9a4] bg-[#fff3db] text-[#8a5c00]'
+    }`}
+  >
+    <Lamp live={live} />
+    {LIVE_LABEL[live]}
+    {live === 'sheet' && asOf && <span className="hidden sm:inline font-medium opacity-80 tabular-nums">· {asOf} 수집</span>}
+    {live === 'error' && onRetry && (
+      <button type="button" onClick={onRetry} className="underline underline-offset-2">다시 시도</button>
+    )}
+  </span>
+);
+
+export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live; onRetry?: () => void }> = ({ active, asOf, live = 'web', onRetry }) => (
   <header className="bg-white border-b border-[var(--nr-line)] jbe-noprint">
     <div className={BOX}>
       <div className="hidden md:flex justify-end gap-3 pt-3 text-[13px] text-slate-600">
-        {STANDALONE ? <b className="text-slate-800">내부망용 파일 · {LIVE_LABEL[live]}</b> : <DownloadButton />}
+        {STANDALONE ? <b className="text-slate-800">내부망용 파일</b> : <DownloadButton />}
         <span className="text-slate-300" aria-hidden="true">|</span>
         <span>비공식 업무지원 도구</span>
         <span className="text-slate-300" aria-hidden="true">|</span>
@@ -81,9 +103,11 @@ export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live 
             <span className="block text-[12px] text-slate-500">전북특별자치도교육청 · 전북특별자치도의회 일정</span>
           </span>
         </a>
-        <span className="ml-auto md:hidden">
-          {STANDALONE ? <span className="text-[12px] font-bold text-slate-600 tabular-nums">{LIVE_LABEL[live]} · {asOf?.slice(5, 10)} 기준</span> : <DownloadButton variant="small" />}
-        </span>
+        {STANDALONE ? (
+          <span className="ml-auto"><SheetStatus live={live} asOf={asOf} onRetry={onRetry} /></span>
+        ) : (
+          <span className="ml-auto md:hidden"><DownloadButton variant="small" /></span>
+        )}
       </div>
     </div>
     <nav aria-label="주메뉴" className="border-t border-[var(--nr-line)] lg:hidden">
@@ -241,7 +265,7 @@ export const SiteFooter: React.FC = () => (
     <div className={`${BOX} py-8 text-[14px] text-slate-600 space-y-2`}>
       <p className="nr-title text-[18px] text-[#002f63]">도의회 회의운영 달력</p>
       <p>전북특별자치도의회 회기·본회의·위원회 일정을 교육청 직원이 한눈에 보도록 모은 비공식 업무지원 화면</p>
-      {STANDALONE && <p className="font-bold text-slate-800">내부망용 파일 — 열 때마다 구글 시트에서 최신 일정을 읽음. 시트에 연결되지 않으면 파일에 담긴 자료 표시</p>}
+      {STANDALONE && <p className="font-bold text-slate-800">내부망용 파일 — 열 때마다 구글 시트에서 최신 일정을 읽음</p>}
       <p>
         <b className="text-slate-800">담당</b> 정책기획과 빅데이터담당 · <b className="text-slate-800">성격</b> 비공식 · 일정 확정은 도의회 원문 기준
       </p>

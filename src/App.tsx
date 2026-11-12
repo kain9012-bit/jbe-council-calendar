@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight, CalendarDays, RefreshCw } from 'lucide-react';
 import type { CEvent, Payload, Scope } from './types';
-import { SHEET_ID } from './config';
+import { Splash } from './components/Splash';
 import { DownloadButton, Lnb, Modal, PageTitle, SiteFooter, SiteHeader, SubLayout, TopButton, type MenuKey } from './components/Shell';
 import { EventCard, Pill } from './components/Event';
 import {
@@ -45,16 +45,17 @@ const TITLE: Record<MenuKey, string> = { calendar: '월간 달력', list: '다�
 
 export default function App() {
   const route = useRoute();
-  const { data, error, retry, live } = useData();
+  const { data, error, retry, live, phase } = useData();
   const [scope, setScope] = useState<Scope>(() => (store.get('jbc-scope', 'edu') as Scope));
   const [body, setBody] = useState('');
   useEffect(() => store.set('jbc-scope', scope), [scope]);
 
   return (
     <div className="min-h-screen bg-white text-[var(--nr-text)] flex flex-col">
-      <SiteHeader active={route} asOf={data?.generated.replace('T', ' ').slice(0, 16)} live={live} />
+      <SiteHeader active={route} asOf={data?.generated.replace('T', ' ').slice(0, 16)} live={live} onRetry={retry} />
+      {STANDALONE && <Splash live={live} phase={phase} error={error} onRetry={retry} />}
       <SubLayout lnb={<Lnb active={route} />} trail={['도의회 일정', TITLE[route]]}>
-        {error ? (
+        {error && !STANDALONE ? (
           <div className="rounded-[14px] border border-[var(--nr-line)] p-8 text-center">
             <p className="nr-title text-[20px]">일정 자료를 받지 못함</p>
             <p className="mt-2 text-[15px] text-slate-600">잠시 뒤 다시 시도. 급하면 도의회 원문 확인</p>
@@ -69,11 +70,11 @@ export default function App() {
             </div>
           </div>
         ) : !data ? (
-          <div className="py-20 text-center text-slate-500">일정 자료 불러오는 중…</div>
+          STANDALONE ? <div className="py-20" /> : <div className="py-20 text-center text-slate-500">일정 자료 불러오는 중…</div>
         ) : (
           <HealthBanner data={data} live={live} />
         )}
-        {error || !data ? null : route === 'calendar' ? (
+        {(error && !STANDALONE) || !data ? null : route === 'calendar' ? (
           <CalendarPage data={data} scope={scope} setScope={setScope} body={body} setBody={setBody} />
         ) : route === 'list' ? (
           <ListPage data={data} scope={scope} setScope={setScope} body={body} setBody={setBody} />
@@ -93,22 +94,11 @@ export default function App() {
 const stamp = (s?: string) => (s ? s.replace('T', ' ').slice(0, 16) : '');
 const hoursSince = (s?: string) => (s ? (Date.now() - new Date(s).getTime()) / 3600000 : Infinity);
 
-const HealthBanner: React.FC<{ data: Payload; live: Live }> = ({ data, live }) => {
+const HealthBanner: React.FC<{ data: Payload; live: Live }> = ({ data }) => {
   const h = data.health;
   const stale = hoursSince(data.lastSuccess ?? data.generated) > 36;
   const fails = h?.items.filter((i) => i.level === 'fail') ?? [];
   const warns = h?.items.filter((i) => i.level === 'warn') ?? [];
-  if (STANDALONE && live === 'file' && SHEET_ID) {
-    return (
-      <div className="mb-6 flex gap-3 rounded-[14px] px-4 py-3 text-[15px] bg-[#fff3db] text-[#6b4700]" role="status">
-        <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
-        <div className="min-w-0">
-          <p className="font-bold">구글 시트에 연결되지 않음 — 이 파일에 담긴 {stamp(data.generated)} 기준 자료 표시</p>
-          <p className="mt-0.5 text-[14px] opacity-90">최신 일정과 다를 수 있음. 시트 접속 가능한 PC에서 다시 열기</p>
-        </div>
-      </div>
-    );
-  }
   if (!stale && !fails.length && !warns.length) return null;
   const bad = fails.length > 0 || stale;
   return (
@@ -117,7 +107,7 @@ const HealthBanner: React.FC<{ data: Payload; live: Live }> = ({ data, live }) =
       <div className="min-w-0">
         <p className="font-bold">
           {stale && STANDALONE
-            ? `${stamp(data.generated)} 이후 새 자료 없음 — 최신 일정과 다를 수 있음`
+            ? `구글 시트 자료가 ${stamp(data.generated)} 이후 갱신되지 않음 — 최신 일정과 다를 수 있음`
             : stale
             ? `마지막 정상 수집 ${stamp(data.lastSuccess ?? data.generated)} — 최신 일정과 다를 수 있음`
             : fails.length
@@ -295,7 +285,6 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
             const items = onDay(ev, d).sort(byTime);
             const isToday = d === t;
             const changed = items.some((e) => e.changed && e.changed.length);
-            const daily = items.some((e) => e.source.type === '당일');
             const label = s && (d === s.start || (parse(d).getDay() === 0 && d <= s.end)) ? `제${s.no}회` : '';
             return (
               <button
@@ -318,8 +307,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
                     {parse(d).getDate()}
                   </span>
                   {label && <span className={`hidden sm:inline text-[11px] font-bold ${s?.kind === '정례회' ? 'text-[var(--nr-p1)]' : 'text-[#0b6b67]'}`}>{label}</span>}
-                  {daily && <span className="ml-auto hidden sm:inline text-[11px] font-bold text-[#267337]" title="당일 운영상황 반영">당일</span>}
-                  {changed && <span className={`${daily ? '' : 'ml-auto'} w-2 h-2 rounded-full bg-[#f0a500]`} title="계획과 다름" />}
+                  {changed && <span className="ml-auto w-2 h-2 rounded-full bg-[#f0a500]" title="계획과 다름" />}
                 </span>
                 <span className="mt-1 hidden sm:flex flex-col gap-0.5">
                   {items.slice(0, 4).map((e, k) => (
@@ -350,7 +338,6 @@ const Legend: React.FC = () => (
   <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-slate-600">
     <li className="flex items-center gap-1.5"><span className="w-4 h-1 bg-[var(--nr-p1)]" /> 정례회 기간</li>
     <li className="flex items-center gap-1.5"><span className="w-4 h-1 bg-[#32bdb8]" /> 임시회 기간</li>
-    <li className="flex items-center gap-1.5"><b className="text-[#267337]">당일</b> 일일회의운영상황 반영</li>
     <li className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#f0a500]" /> 계획(안)과 달라진 회의 있음</li>
     <li className="flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" aria-hidden="true" /> 날짜 누르면 상세</li>
   </ul>
@@ -534,10 +521,9 @@ const AboutPage: React.FC<{ data: Payload }> = ({ data }) => {
         <h2 className="nr-title text-[20px]">내부망용 파일</h2>
         <div className="mt-3 rounded-[14px] bg-[var(--nr-bg)] px-5 py-4 text-[15px] text-slate-700">
           <ul className="list-disc pl-5 space-y-1">
-            <li>화면·글꼴을 담은 HTML 파일 하나 — 열 때마다 구글 시트에서 최신 일정을 읽음 (시트 외 바깥 호출 없음)</li>
-            <li>구글 시트는 30분마다 이 웹의 자료로 갱신</li>
-            <li>시트에 연결되지 않으면 파일에 담긴 자료(받은 시점) 표시</li>
-            <li>파일 이름 끝 숫자 = 자료 수집일 (예: 도의회_회의운영_달력_{data.generated.slice(0, 10).replace(/-/g, '')}.html)</li>
+            <li>화면·글꼴만 담은 HTML 파일 하나 — 일정은 열 때마다 구글 시트에서 읽음 (시트 외 바깥 호출 없음)</li>
+            <li>구글 시트는 30분마다 이 웹의 자료로 갱신 — 파일은 한 번 배포하면 다시 받을 필요 없음</li>
+            <li>머리 오른쪽 표시등: 초록 = 연결됨, 빨강 = 연결 안 됨</li>
           </ul>
           {!STANDALONE && <div className="mt-4 max-w-[280px]"><DownloadButton variant="block" /></div>}
         </div>
