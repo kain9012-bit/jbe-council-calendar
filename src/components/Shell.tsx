@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowUp, ArrowUpRight, Check, ChevronRight, Download, Home, Link2, X } from 'lucide-react';
 import { BOARD_DAILY, BOARD_PLAN, MONTHLY, STANDALONE, downloadStandalone, type Live } from '../lib/data';
 import { Lamp } from './Splash';
+import { BrandIcon } from './BrandIcon';
 
 /**
  * 전북교육청 누리집 하위 화면 틀 (기준: jbe-staff-tools-board Shell.tsx)
@@ -92,12 +93,7 @@ export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live;
       </div>
       <div className="flex items-center gap-4 py-3 md:py-2">
         <a href="#/" className="flex items-center gap-2.5">
-          <span aria-hidden="true" className="grid grid-cols-2 gap-0.5 w-8 h-8 shrink-0">
-            <span className="rounded-sm bg-[var(--nr-p1)]" />
-            <span className="rounded-sm bg-[#32bdb8]" />
-            <span className="rounded-sm bg-[#fecd20]" />
-            <span className="rounded-sm bg-[var(--nr-p2)]" />
-          </span>
+          <BrandIcon size={34} className="shrink-0" />
           <span className="leading-tight">
             <strong className="nr-title block text-[1.375rem] text-[#002f63]">도의회 회의운영 달력</strong>
             <span className="block text-[12px] text-slate-500">전북특별자치도교육청 · 전북특별자치도의회 일정</span>

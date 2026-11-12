@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Check, Loader2, RefreshCw, X } from 'lucide-react';
 import type { Live, Phase } from '../lib/data';
+import { BrandIcon } from './BrandIcon';
 
 /** 상태 표시등 — 초록: 연결됨 · 빨강: 연결 안 됨 · 주황: 연결 중 */
 export const Lamp: React.FC<{ live: Live; size?: number }> = ({ live, size = 10 }) => (
@@ -51,15 +52,7 @@ export const Splash: React.FC<{ live: Live; phase: Phase; error: string; onRetry
       className={`fixed inset-0 z-[100] flex items-center justify-center bg-[var(--nr-band)] px-5 ${leaving ? 'jbc-fade-out' : ''}`}
     >
       <div className="w-full max-w-[460px] rounded-[20px] bg-white px-7 py-9 sm:px-10 shadow-[0_10px_40px_rgba(28,100,172,0.12)] text-center">
-        <span aria-hidden="true" className="mx-auto grid grid-cols-2 gap-1 w-12 h-12">
-          {['var(--nr-p1)', '#32bdb8', '#fecd20', 'var(--nr-p2)'].map((c, i) => (
-            <span
-              key={i}
-              className={`rounded-[4px] ${failed || leaving ? '' : 'jbc-tile'}`}
-              style={{ background: c, animationDelay: `${[0, 0.15, 0.45, 0.3][i]}s` }}
-            />
-          ))}
-        </span>
+        <BrandIcon size={56} animate={!failed && !leaving} className="mx-auto" />
         <p className="nr-title mt-4 text-[24px] text-[#002f63]">도의회 회의운영 달력</p>
         <p className="mt-1 text-[13px] text-slate-500">내부망용 파일 · 일정은 구글 시트에서 불러옴</p>
 

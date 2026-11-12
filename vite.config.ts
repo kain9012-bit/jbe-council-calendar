@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+import { readFileSync } from 'node:fs';
 
 /**
  * 내부망판(단일 HTML) — 바깥 주소 호출 0건.
@@ -19,6 +20,11 @@ const standaloneEdition = (): Plugin => ({
       .concat(
         '\n@font-face { font-family: "SUIT Variable"; font-weight: 100 900; font-display: swap; src: url("./fonts/SUIT-Variable.woff2") format("woff2"); }\n',
       );
+  },
+  // 탭 아이콘도 파일 안에
+  transformIndexHtml(html) {
+    const svg = readFileSync('public/favicon.svg', 'utf8');
+    return html.replace('href="./favicon.svg"', `href="data:image/svg+xml,${encodeURIComponent(svg)}"`);
   },
 });
 

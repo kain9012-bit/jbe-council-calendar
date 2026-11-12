@@ -762,3 +762,6 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) {
   .jbc-bar, .jbc-tile, .jbc-lamp-on, .jbc-lamp-off, .jbc-lamp-wait { animation: none; }
 }
+@keyframes jbc-cell { 0%, 100% { opacity: .35; } 40% { opacity: 1; } }
+.jbc-cell { animation: jbc-cell 1.3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .jbc-cell { animation: none; } }
