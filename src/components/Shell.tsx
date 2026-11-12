@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUp, ArrowUpRight, Check, ChevronRight, Download, Home, Link2, X } from 'lucide-react';
-import { BOARD_DAILY, BOARD_PLAN, MONTHLY, STANDALONE, downloadStandalone } from '../lib/data';
+import { BOARD_DAILY, BOARD_PLAN, MONTHLY, STANDALONE, downloadStandalone, type Live } from '../lib/data';
 
 /**
  * 전북교육청 누리집 하위 화면 틀 (기준: jbe-staff-tools-board Shell.tsx)
@@ -52,11 +52,13 @@ export const DownloadButton: React.FC<{ variant?: 'link' | 'block' | 'small' }> 
   );
 };
 
-export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string }> = ({ active, asOf }) => (
+const LIVE_LABEL: Record<Live, string> = { web: '', sheet: '구글 시트 연동', file: '파일에 담긴 자료', loading: '구글 시트 확인 중' };
+
+export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live }> = ({ active, asOf, live = 'web' }) => (
   <header className="bg-white border-b border-[var(--nr-line)] jbe-noprint">
     <div className={BOX}>
       <div className="hidden md:flex justify-end gap-3 pt-3 text-[13px] text-slate-600">
-        {STANDALONE ? <b className="text-slate-800">내부망용 파일</b> : <DownloadButton />}
+        {STANDALONE ? <b className="text-slate-800">내부망용 파일 · {LIVE_LABEL[live]}</b> : <DownloadButton />}
         <span className="text-slate-300" aria-hidden="true">|</span>
         <span>비공식 업무지원 도구</span>
         <span className="text-slate-300" aria-hidden="true">|</span>
@@ -80,7 +82,7 @@ export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string }> = ({ activ
           </span>
         </a>
         <span className="ml-auto md:hidden">
-          {STANDALONE ? <span className="text-[12px] font-bold text-slate-600 tabular-nums">내부망용 · {asOf?.slice(5, 10)} 기준</span> : <DownloadButton variant="small" />}
+          {STANDALONE ? <span className="text-[12px] font-bold text-slate-600 tabular-nums">{LIVE_LABEL[live]} · {asOf?.slice(5, 10)} 기준</span> : <DownloadButton variant="small" />}
         </span>
       </div>
     </div>
@@ -198,7 +200,7 @@ export const Lnb: React.FC<{ active: MenuKey; subs?: Partial<Record<MenuKey, Lnb
     {!STANDALONE && (
       <div className="mt-6 rounded-[10px] border border-[var(--nr-line)] px-4 py-4 text-[13px] text-slate-600">
         <p className="font-bold text-slate-800">내부망에서 보기</p>
-        <p className="mt-1">지금 자료를 담은 HTML 파일 하나. 인터넷 없이 열림</p>
+        <p className="mt-1">HTML 파일 하나. 열 때마다 구글 시트에서 최신 일정을 읽음</p>
         <div className="mt-3"><DownloadButton variant="block" /></div>
       </div>
     )}
@@ -239,7 +241,7 @@ export const SiteFooter: React.FC = () => (
     <div className={`${BOX} py-8 text-[14px] text-slate-600 space-y-2`}>
       <p className="nr-title text-[18px] text-[#002f63]">도의회 회의운영 달력</p>
       <p>전북특별자치도의회 회기·본회의·위원회 일정을 교육청 직원이 한눈에 보도록 모은 비공식 업무지원 화면</p>
-      {STANDALONE && <p className="font-bold text-slate-800">내부망용 파일 — 내려받은 시점 자료. 최신 일정은 인터넷망 달력에서 새 파일 받기</p>}
+      {STANDALONE && <p className="font-bold text-slate-800">내부망용 파일 — 열 때마다 구글 시트에서 최신 일정을 읽음. 시트에 연결되지 않으면 파일에 담긴 자료 표시</p>}
       <p>
         <b className="text-slate-800">담당</b> 정책기획과 빅데이터담당 · <b className="text-slate-800">성격</b> 비공식 · 일정 확정은 도의회 원문 기준
       </p>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CEvent, Payload, Scope, Session } from '../types';
+import { SHEET_DATA_TAB, SHEET_ID } from '../config';
 
 export const COUNCIL = 'https://www.jbstatecouncil.jeonbuk.kr';
 export const postUrl = (board: number, id: number) => `${COUNCIL}/jbassem/board/${board}/1/read/${id}`;
@@ -72,12 +73,68 @@ export async function downloadStandalone() {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+/**
+ * 구글 시트(_data 탭)에서 자료 읽기 — 시각화 API(gviz)의 JSONP 응답.
+ * 파일(file://)로 열어도 동작하도록 script 태그로 부름.
+ */
+export function loadSheet(timeout = 15000): Promise<Payload> {
+  return new Promise((resolve, reject) => {
+    if (!SHEET_ID) return reject(new Error('시트 ID 없음'));
+    const cb = `jbcSheet${Date.now()}`;
+    const s = document.createElement('script');
+    const w = window as unknown as Record<string, unknown>;
+    let timer = 0;
+    const done = (fn: () => void) => {
+      window.clearTimeout(timer);
+      delete w[cb];
+      s.remove();
+      fn();
+    };
+    timer = window.setTimeout(() => done(() => reject(new Error('시트 응답 없음'))), timeout);
+    w[cb] = (resp: { status?: string; errors?: { detailed_message?: string }[]; table?: { rows?: { c?: ({ v?: unknown } | null)[] }[] } }) =>
+      done(() => {
+        try {
+          if (resp.status === 'error') throw new Error(resp.errors?.[0]?.detailed_message ?? '시트 오류');
+          const text = (resp.table?.rows ?? [])
+            .map((r) => String(r.c?.[0]?.v ?? ''))
+            .filter((v) => v.startsWith('~'))
+            .map((v) => v.slice(1))
+            .join('');
+          const d = JSON.parse(text) as Payload;
+          if (!d.events || !d.sessions || !d.generated) throw new Error('시트 자료 형식 이상');
+          resolve(d);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    s.onerror = () => done(() => reject(new Error('시트 접속 실패')));
+    s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_DATA_TAB)}&headers=1&tqx=responseHandler:${cb}`;
+    document.head.appendChild(s);
+  });
+}
+
+/** 자료 출처 — web: 웹(GitHub Pages) · sheet: 구글 시트 최신 · file: 내부망 파일에 담긴 자료 · loading: 시트 읽는 중 */
+export type Live = 'web' | 'sheet' | 'file' | 'loading';
+
 export function useData() {
   const [data, setData] = useState<Payload | null>(() => embedded());
+  const [live, setLive] = useState<Live>(STANDALONE ? (SHEET_ID ? 'loading' : 'file') : 'web');
   const [error, setError] = useState('');
   const [n, setN] = useState(0);
   useEffect(() => {
-    if (embedded()) return;
+    if (STANDALONE) {
+      // 내부망 파일: 담긴 자료를 먼저 보여 주고, 시트에서 더 최신 자료를 받으면 바꿈
+      if (!SHEET_ID) return;
+      setLive('loading');
+      loadSheet()
+        .then((d) => {
+          const cur = embedded();
+          if (!cur || d.generated >= cur.generated) setData(d);
+          setLive('sheet');
+        })
+        .catch(() => setLive('file'));
+      return;
+    }
     setError('');
     fetch(`./data/schedule.json?v=${Date.now()}`)
       .then((r) => {
@@ -87,7 +144,7 @@ export function useData() {
       .then(setData)
       .catch((e) => setError(String(e)));
   }, [n]);
-  return { data, error, retry: () => setN((x) => x + 1) };
+  return { data, error, live, retry: () => setN((x) => x + 1) };
 }
 
 export const iso = (d: Date) =>

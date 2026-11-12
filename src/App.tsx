@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight, CalendarDays, RefreshCw } from 'lucide-react';
 import type { CEvent, Payload, Scope } from './types';
+import { SHEET_ID } from './config';
 import { DownloadButton, Lnb, Modal, PageTitle, SiteFooter, SiteHeader, SubLayout, TopButton, type MenuKey } from './components/Shell';
 import { EventCard, Pill } from './components/Event';
 import {
-  BOARD_DAILY, BOARD_PLAN, EDU_BODIES, MONTHLY, STANDALONE, addDays, byTime, daysBetween, dow, firstLine, iso, md, onDay, parse,
+  BOARD_DAILY, BOARD_PLAN, EDU_BODIES, MONTHLY, STANDALONE, type Live, addDays, byTime, daysBetween, dow, firstLine, iso, md, onDay, parse,
   sessionOn, short, span, today, tone, useData, visible,
 } from './lib/data';
 
@@ -44,14 +45,14 @@ const TITLE: Record<MenuKey, string> = { calendar: '월간 달력', list: '다�
 
 export default function App() {
   const route = useRoute();
-  const { data, error, retry } = useData();
+  const { data, error, retry, live } = useData();
   const [scope, setScope] = useState<Scope>(() => (store.get('jbc-scope', 'edu') as Scope));
   const [body, setBody] = useState('');
   useEffect(() => store.set('jbc-scope', scope), [scope]);
 
   return (
     <div className="min-h-screen bg-white text-[var(--nr-text)] flex flex-col">
-      <SiteHeader active={route} asOf={data?.generated.replace('T', ' ').slice(0, 16)} />
+      <SiteHeader active={route} asOf={data?.generated.replace('T', ' ').slice(0, 16)} live={live} />
       <SubLayout lnb={<Lnb active={route} />} trail={['도의회 일정', TITLE[route]]}>
         {error ? (
           <div className="rounded-[14px] border border-[var(--nr-line)] p-8 text-center">
@@ -70,7 +71,7 @@ export default function App() {
         ) : !data ? (
           <div className="py-20 text-center text-slate-500">일정 자료 불러오는 중…</div>
         ) : (
-          <HealthBanner data={data} />
+          <HealthBanner data={data} live={live} />
         )}
         {error || !data ? null : route === 'calendar' ? (
           <CalendarPage data={data} scope={scope} setScope={setScope} body={body} setBody={setBody} />
@@ -92,11 +93,22 @@ export default function App() {
 const stamp = (s?: string) => (s ? s.replace('T', ' ').slice(0, 16) : '');
 const hoursSince = (s?: string) => (s ? (Date.now() - new Date(s).getTime()) / 3600000 : Infinity);
 
-const HealthBanner: React.FC<{ data: Payload }> = ({ data }) => {
+const HealthBanner: React.FC<{ data: Payload; live: Live }> = ({ data, live }) => {
   const h = data.health;
   const stale = hoursSince(data.lastSuccess ?? data.generated) > 36;
   const fails = h?.items.filter((i) => i.level === 'fail') ?? [];
   const warns = h?.items.filter((i) => i.level === 'warn') ?? [];
+  if (STANDALONE && live === 'file' && SHEET_ID) {
+    return (
+      <div className="mb-6 flex gap-3 rounded-[14px] px-4 py-3 text-[15px] bg-[#fff3db] text-[#6b4700]" role="status">
+        <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="font-bold">구글 시트에 연결되지 않음 — 이 파일에 담긴 {stamp(data.generated)} 기준 자료 표시</p>
+          <p className="mt-0.5 text-[14px] opacity-90">최신 일정과 다를 수 있음. 시트 접속 가능한 PC에서 다시 열기</p>
+        </div>
+      </div>
+    );
+  }
   if (!stale && !fails.length && !warns.length) return null;
   const bad = fails.length > 0 || stale;
   return (
@@ -105,7 +117,7 @@ const HealthBanner: React.FC<{ data: Payload }> = ({ data }) => {
       <div className="min-w-0">
         <p className="font-bold">
           {stale && STANDALONE
-            ? `이 파일은 ${stamp(data.generated)} 기준 — 인터넷망 달력에서 새 파일 받기 권장`
+            ? `${stamp(data.generated)} 이후 새 자료 없음 — 최신 일정과 다를 수 있음`
             : stale
             ? `마지막 정상 수집 ${stamp(data.lastSuccess ?? data.generated)} — 최신 일정과 다를 수 있음`
             : fails.length
@@ -522,8 +534,9 @@ const AboutPage: React.FC<{ data: Payload }> = ({ data }) => {
         <h2 className="nr-title text-[20px]">내부망용 파일</h2>
         <div className="mt-3 rounded-[14px] bg-[var(--nr-bg)] px-5 py-4 text-[15px] text-slate-700">
           <ul className="list-disc pl-5 space-y-1">
-            <li>화면·자료·글꼴을 담은 HTML 파일 하나 — 바깥 주소 호출 없음</li>
-            <li>내려받은 시점 자료 고정 — 최신 일정은 새로 받기</li>
+            <li>화면·글꼴을 담은 HTML 파일 하나 — 열 때마다 구글 시트에서 최신 일정을 읽음 (시트 외 바깥 호출 없음)</li>
+            <li>구글 시트는 30분마다 이 웹의 자료로 갱신</li>
+            <li>시트에 연결되지 않으면 파일에 담긴 자료(받은 시점) 표시</li>
             <li>파일 이름 끝 숫자 = 자료 수집일 (예: 도의회_회의운영_달력_{data.generated.slice(0, 10).replace(/-/g, '')}.html)</li>
           </ul>
           {!STANDALONE && <div className="mt-4 max-w-[280px]"><DownloadButton variant="block" /></div>}

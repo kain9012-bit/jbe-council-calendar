@@ -45,9 +45,14 @@
 - 새로 생긴 수집 문제(종료코드 2) 또는 회귀 시험 실패 → 마지막 `alert` 단계 실패 → GitHub 실패 알림 메일. 같은 문제는 다음 실행부터 다시 알리지 않음
 - 저장소 설정 필요: Secrets `OPENROUTER_API_KEY`, (선택) Variables `OPENROUTER_MODEL`, Pages 원본 = GitHub Actions, 개인 설정 Notifications → Actions 실패 메일 켜기
 
-## 내부망용 단일 파일
-- `npm run build` → `release/도의회_회의운영_달력_YYYYMMDD.html` (화면·자료·글꼴 포함, 바깥 호출 0건)
-- 웹판 「내부망용 파일 받기」 → 그 시점 최신 자료로 같은 파일을 브라우저에서 바로 만듦 (`dist/standalone-template.html` 사용)
+## 내부망용 단일 파일 + 구글 시트
+- 웹(GitHub Pages)은 저장소의 `data/schedule.json` 을 읽음. 구글 시트는 내부망 파일 전용
+- 구글 시트: `apps-script/Code.gs` 가 30분마다 웹의 schedule.json 을 시트로 옮김(덮어쓰기)
+  - `_data` 탭: JSON 4만 자 조각(앞에 `~`) — 내부망 파일이 읽음 / `일정` 탭: 사람이 보는 표 / `기록` 탭: 동기화 기록
+  - 시트 공유: 링크가 있는 모든 사용자 — 뷰어
+- 내부망 파일: 열 때 구글 시트(gviz JSONP)에서 최신 자료를 읽음. 실패하면 파일에 담긴 자료 + 안내 띠. 시트 외 바깥 호출 없음
+- 시트 ID: `src/config.ts` 의 `SHEET_ID`
+- `npm run build` → `release/도의회_회의운영_달력_YYYYMMDD.html`, 웹의 「내부망용 파일 받기」도 같은 파일
 
 ## 실행
 ```
