@@ -312,7 +312,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
                 <span className="flex items-center gap-1">
                   <span
                     className={`grid place-items-center min-w-[26px] h-[26px] rounded-full text-[14px] tabular-nums ${
-                      isToday ? 'bg-[var(--nr-p3)] text-white font-bold' : parse(d).getDay() === 0 ? 'text-[#c0392b]' : parse(d).getDay() === 6 ? 'text-[var(--nr-p3)]' : ''
+                      isToday ? 'bg-[#fecd20] text-[#1d2550] font-bold' : parse(d).getDay() === 0 ? 'text-[#c0392b]' : parse(d).getDay() === 6 ? 'text-[var(--nr-p3)]' : ''
                     }`}
                   >
                     {parse(d).getDate()}
