@@ -8,10 +8,9 @@ import { BrandIcon } from './BrandIcon';
  * 전북교육청 누리집 하위 화면 틀 (기준: jbe-staff-tools-board Shell.tsx)
  * 머리말 → [왼쪽 메뉴 | 위치 표시 + 본문] → 바닥글
  */
-export type MenuKey = 'calendar' | 'list' | 'sessions' | 'about';
+export type MenuKey = 'calendar' | 'sessions' | 'about';
 export const MENU: { key: MenuKey; label: string; href: string }[] = [
   { key: 'calendar', label: '월간 달력', href: '#/' },
-  { key: 'list', label: '다가오는 일정', href: '#/list' },
   { key: 'sessions', label: '연간 회기', href: '#/sessions' },
   { key: 'about', label: '자료 출처·한계', href: '#/about' },
 ];

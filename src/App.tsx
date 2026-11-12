@@ -21,7 +21,7 @@ const useRoute = () => {
     window.addEventListener('hashchange', f);
     return () => window.removeEventListener('hashchange', f);
   }, []);
-  return ['calendar', 'list', 'sessions', 'about'].includes(r) ? r : 'calendar';
+  return ['calendar', 'sessions', 'about'].includes(r) ? r : 'calendar';
 };
 
 const store = {
@@ -41,7 +41,7 @@ const store = {
   },
 };
 
-const TITLE: Record<MenuKey, string> = { calendar: '월간 달력', list: '다가오는 일정', sessions: '연간 회기', about: '자료 출처·한계' };
+const TITLE: Record<MenuKey, string> = { calendar: '월간 달력', sessions: '연간 회기', about: '자료 출처·한계' };
 
 export default function App() {
   const route = useRoute();
@@ -75,8 +75,6 @@ export default function App() {
         )}
         {(error && !STANDALONE) || !data ? null : route === 'calendar' ? (
           <CalendarPage data={data} body={body} setBody={setBody} />
-        ) : route === 'list' ? (
-          <ListPage data={data} body={body} setBody={setBody} />
         ) : route === 'sessions' ? (
           <SessionsPage data={data} />
         ) : (
@@ -314,7 +312,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
         </div>
       </div>
       <Legend />
-      {pick && <DayModal data={data} d={pick} body={body} onClose={() => setPick(null)} />}
+      {pick && <DayModal data={data} d={pick} body={body} showMinor={showMinor} onClose={() => setPick(null)} />}
     </>
   );
 };
@@ -328,10 +326,10 @@ const Legend: React.FC = () => (
   </ul>
 );
 
-const DayModal: React.FC<{ data: Payload; d: string; body: string; onClose: () => void }> = ({ data, d, body, onClose }) => {
+const DayModal: React.FC<{ data: Payload; d: string; body: string; showMinor: boolean; onClose: () => void }> = ({ data, d, body, showMinor, onClose }) => {
   const [all, setAll] = useState(!body);
   const s = sessionOn(data.sessions, d);
-  const items = onDay(visible(data.events, all ? '' : body, true), d).sort(byTime);
+  const items = onDay(visible(data.events, all ? '' : body, showMinor), d).sort(byTime);
   const hidden = onDay(data.events.filter((e) => e.notInDaily), d);
   const hasDaily = onDay(data.events, d).some((e) => e.source.type === '당일');
   return (
@@ -366,45 +364,6 @@ const DayModal: React.FC<{ data: Payload; d: string; body: string; onClose: () =
         )}
       </div>
     </Modal>
-  );
-};
-
-/* ---------- 다가오는 일정 ---------- */
-const ListPage: React.FC<ScopeProps> = (p) => {
-  const { data, body } = p;
-  const t = today();
-  const [past, setPast] = useState(false);
-  const ev = visible(data.events, body, false);
-  const from = past ? addDays(t, -14) : t;
-  const until = addDays(t, 45);
-  const days: string[] = [];
-  for (let d = from; d <= until; d = addDays(d, 1)) if (onDay(ev, d).length) days.push(d);
-  return (
-    <>
-      <PageTitle desc={`${past ? '지난 2주부터' : '오늘부터'} 45일 뒤까지, 회의가 있는 날만`}>다가오는 일정</PageTitle>
-      <div className="mt-6"><ScopeBar {...p} /></div>
-      <label className="mt-4 inline-flex items-center gap-2 text-[14px] text-slate-600">
-        <input type="checkbox" checked={past} onChange={(e) => setPast(e.target.checked)} className="w-4 h-4" /> 지난 2주도 보기
-      </label>
-      <div className="mt-4 space-y-8">
-        {days.length === 0 && <p className="py-12 text-center text-slate-500">기간 안 일정 없음</p>}
-        {days.map((d) => {
-          const s = sessionOn(data.sessions, d);
-          return (
-            <section key={d} aria-label={md(d)}>
-              <h2 className="flex flex-wrap items-baseline gap-2 border-b-2 border-[#33363d] pb-2">
-                <span className={`nr-title text-[22px] tabular-nums ${d === t ? 'text-[var(--nr-p3)]' : ''}`}>{md(d)}</span>
-                {d === t && <Pill className="bg-[var(--nr-p3)] text-white">오늘</Pill>}
-                {s && <span className="text-[13px] text-slate-500">제{s.no}회 {s.kind} {daysBetween(s.start, d)}일째</span>}
-              </h2>
-              <div className="mt-3 grid gap-3 xl:grid-cols-2">
-                {onDay(ev, d).sort(byTime).map((e, i) => <EventCard key={i} e={e} />)}
-              </div>
-            </section>
-          );
-        })}
-      </div>
-    </>
   );
 };
 
