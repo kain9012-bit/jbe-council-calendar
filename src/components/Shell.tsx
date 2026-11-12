@@ -79,10 +79,7 @@ export const SheetStatus: React.FC<{ live: Live; asOf?: string; onRetry?: () => 
 export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live; onRetry?: () => void }> = ({ active, asOf, live = 'web', onRetry }) => (
   <header className="bg-white border-b border-[var(--nr-line)] jbe-noprint">
     <div className={BOX}>
-      <div className="hidden md:flex justify-end gap-3 pt-3 text-[13px] text-slate-600">
-        <span className="tabular-nums">{asOf ? `${asOf} 수집 기준` : '수집 시점 확인 중'}</span>
-      </div>
-      <div className="flex items-center gap-4 py-3 md:py-2">
+      <div className="flex items-center gap-4 py-3">
         <a href="#/" className="flex items-center gap-2.5">
           <BrandIcon size={34} className="shrink-0" />
           <span className="leading-tight">
@@ -92,7 +89,9 @@ export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live;
         </a>
         {STANDALONE ? (
           <span className="ml-auto shrink-0"><SheetStatus live={live} asOf={asOf} onRetry={onRetry} /></span>
-        ) : null}
+        ) : (
+          <span className="ml-auto hidden md:inline text-[13px] text-slate-600 tabular-nums">{asOf ? `${asOf} 수집 기준` : '수집 시점 확인 중'}</span>
+        )}
       </div>
     </div>
     <nav aria-label="주메뉴" className="border-t border-[var(--nr-line)] lg:hidden">
