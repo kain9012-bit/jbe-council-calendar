@@ -187,6 +187,16 @@ export const timeKey = (t: string) => (/^\d{1,2}:\d{2}/.test(t) ? t.padStart(5, 
 export const byTime = (a: CEvent, b: CEvent) =>
   timeKey(a.time).localeCompare(timeKey(b.time)) || (EDU_BODIES.indexOf(b.body) - EDU_BODIES.indexOf(a.body));
 
+/** '-' 줄의 국·기관 이름(예: 교육국 · 전북교육인권센터). '제안자 : …' 같은 줄은 뺌 */
+export const subLine = (e: CEvent) =>
+  e.text
+    .split('\n')
+    .filter((x) => /^\s*-/.test(x) && !x.includes(':'))
+    .flatMap((x) => x.replace(/^\s*-\s*/, '').split(/\s*,\s*/))
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .join(' · ');
+
 export const firstLine = (e: CEvent) => {
   if (e.body === '본회의' && e.meeting) return `${e.meeting} 본회의`;
   const l = e.text.split('\n').find((x) => x.trim() && !x.startsWith('-')) ?? e.text.split('\n')[0] ?? '';
