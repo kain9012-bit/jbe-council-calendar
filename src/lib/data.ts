@@ -50,11 +50,11 @@ const SLOT_OPEN = '<script id="jbc-data" type="application/json">';
 /** 웹판 — 자료 없는 틀 + 지금 자료를 합쳐 단일 HTML 내려받기 */
 export async function downloadStandalone() {
   const [tpl, data] = await Promise.all([
-    fetch('./standalone-template.html').then((r) => {
+    fetch(`./standalone-template.html?v=${Date.now()}`, { cache: 'no-store' }).then((r) => {
       if (!r.ok) throw new Error(`틀 파일 HTTP ${r.status}`);
       return r.text();
     }),
-    fetch(`./data/schedule.json?v=${Date.now()}`).then((r) => {
+    fetch(`./data/schedule.json?v=${Date.now()}`, { cache: 'no-store' }).then((r) => {
       if (!r.ok) throw new Error(`자료 HTTP ${r.status}`);
       return r.json();
     }),
@@ -63,7 +63,7 @@ export async function downloadStandalone() {
   if (!tpl.includes(slot)) throw new Error('틀에 자료 자리가 없음');
   const safe = JSON.stringify(data).replace(/</g, '\\u003c');
   const html = tpl.replace(slot, () => `${SLOT_OPEN}${safe}</script>`);
-  const stamp = String(data.generated).slice(0, 10).replace(/-/g, '');
+  const stamp = String(data.generated).slice(0, 16).replace(/[-:]/g, '').replace('T', '_');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
   a.download = `도의회_회의운영_달력_${stamp}.html`;

@@ -11,7 +11,7 @@ if (existsSync('dist')) copyFileSync('dist-standalone/index.html', 'dist/standal
 const data = readFileSync('public/data/schedule.json', 'utf8');
 const safe = JSON.stringify(JSON.parse(data)).replace(/</g, '\\u003c');
 const html = tpl.replace(SLOT, () => SLOT.replace('__JBC_DATA__', safe));
-const stamp = JSON.parse(data).generated.slice(0, 10).replace(/-/g, '');
+const stamp = JSON.parse(data).generated.slice(0, 16).replace(/[-:]/g, '').replace('T', '_');
 mkdirSync('release', { recursive: true });
 const name = `release/도의회_회의운영_달력_${stamp}.html`;
 writeFileSync(name, html);
