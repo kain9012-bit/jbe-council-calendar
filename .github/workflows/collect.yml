@@ -1,0 +1,90 @@
+name: 수집·배포
+
+on:
+  schedule:
+    # 한국 시각 = UTC + 9. GitHub 예약 실행은 밀릴 수 있어 하루 여러 번
+    - cron: '40 23 * * 0-4'       # 평일 08:40
+    - cron: '40 0,1,4,8 * * 1-5'  # 평일 09:40 · 10:40 · 13:40 · 17:40
+    - cron: '40 1 * * 6,0'        # 주말 10:40 (토요일 회의 대비)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['src/**', 'index.html', 'vite.config.ts', 'package*.json', 'scripts/**', 'public/**']
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.collect.outputs.code }}
+      selftest: ${{ steps.selftest.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install olefile
+
+      - name: 수집
+        id: collect
+        if: github.event_name != 'push'
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+        run: |
+          set +e
+          python collector/collect.py
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: 회귀 시험
+        id: selftest
+        run: |
+          set +e
+          python collector/selftest.py
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: 자료 저장
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data cache
+          if git diff --cached --quiet; then echo "바뀐 자료 없음"; exit 0; fi
+          git commit -m "자료 수집 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
+          git push
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: dist }
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4
+
+  # 새로 생긴 수집 문제가 있으면 이 단계를 실패로 끝냄 → GitHub 이 실패 알림 메일 발송
+  # (자료 저장·화면 반영은 위에서 먼저 끝남. 같은 문제는 다음 실행부터 다시 알리지 않음)
+  alert:
+    needs: [build, deploy]
+    if: always() && (needs.build.outputs.code == '2' || needs.build.outputs.selftest == '1')
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::도의회 일정 수집에 새 문제가 생김. 실행 요약(Summary)의 점검 결과 확인 후 수집기 수정 필요"
+          exit 1
