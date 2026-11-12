@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { CEvent, Payload, Scope, Session } from '../types';
+import type { CEvent, Payload, Session } from '../types';
 import { SHEET_DATA_TAB, SHEET_ID } from '../config';
 
 export const COUNCIL = 'https://www.jbstatecouncil.jeonbuk.kr';
@@ -8,8 +8,22 @@ export const BOARD_PLAN = `${COUNCIL}/jbassem/board/23`;
 export const BOARD_DAILY = `${COUNCIL}/jbassem/board/24`;
 export const MONTHLY = `${COUNCIL}/jbassem/scheduleMonth`;
 
-/** 교육청 직원이 챙길 회의 — 교육위·본회의(교육·학예 행정 질문 포함)·예결특위 */
+/** 보여 줄 회의 — 교육위·본회의·예결특위(교육청 소관만). 다른 위원회는 보이지 않음 */
 export const EDU_BODIES = ['교육위원회', '본회의', '예산결산특별위원회'];
+
+/**
+ * 예결특위 일정이 교육청 소관인지.
+ *  · 교육청·교육감·교육비 → 교육청
+ *  · 전북특별자치도(도의회·도교육청 아님)·도정·부지사 → 도청 (숨김) — 도청 부서 '특별자치교육협력국'도 여기
+ *  · 둘 다 없으면 공통(간담회·계수조정·심사의결 등) → 보임
+ */
+export const isEdu = (e: CEvent) => {
+  if (e.body === '교육위원회' || e.body === '본회의' || e.body === '안내') return true;
+  if (e.body !== '예산결산특별위원회') return false;
+  if (/교육청|교육감|교육비/.test(e.text)) return true;
+  if (/전북특별자치도(?!의회|교육청)|도정|부지사/.test(e.text)) return false;
+  return true;
+};
 
 export const SHORT: Record<string, string> = {
   교육위원회: '교육위',
@@ -157,14 +171,9 @@ export const daysBetween = (a: string, b: string) => Math.round((parse(b).getTim
 
 export const sessionOn = (ss: Session[], d: string) => ss.find((s) => s.start <= d && d <= s.end);
 
-/** 화면에 보일 일정 — 당일 운영상황으로 대체된 계획, 자료수집 같은 빈 일정은 기본 숨김 */
-export function visible(ev: CEvent[], scope: Scope, body: string, showMinor: boolean) {
-  return ev.filter(
-    (e) =>
-      !e.superseded &&
-      (showMinor || !e.minor) &&
-      (body ? e.body === body : scope === 'all' || EDU_BODIES.includes(e.body) || e.body === '안내'),
-  );
+/** 화면에 보일 일정 — 교육청 소관만. 당일 운영상황으로 대체된 계획, 자료수집 같은 빈 일정은 기본 숨김 */
+export function visible(ev: CEvent[], body: string, showMinor: boolean) {
+  return ev.filter((e) => !e.superseded && (showMinor || !e.minor) && isEdu(e) && (!body || e.body === body));
 }
 
 export const onDay = (ev: CEvent[], d: string) => ev.filter((e) => e.start <= d && d <= e.end);

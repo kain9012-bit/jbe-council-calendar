@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight, CalendarDays, RefreshCw } from 'lucide-react';
-import type { CEvent, Payload, Scope } from './types';
+import type { CEvent, Payload } from './types';
 import { Splash } from './components/Splash';
 import { DownloadButton, Lnb, Modal, PageTitle, SiteFooter, SiteHeader, SubLayout, TopButton, type MenuKey } from './components/Shell';
 import { EventCard, Pill } from './components/Event';
 import {
-  BOARD_DAILY, BOARD_PLAN, EDU_BODIES, MONTHLY, STANDALONE, type Live, addDays, byTime, daysBetween, dow, firstLine, iso, md, onDay, parse,
+  BOARD_DAILY, BOARD_PLAN, MONTHLY, isEdu, STANDALONE, type Live, addDays, byTime, daysBetween, dow, firstLine, iso, md, onDay, parse,
   sessionOn, short, span, today, tone, useData, visible,
 } from './lib/data';
 
@@ -46,9 +46,8 @@ const TITLE: Record<MenuKey, string> = { calendar: '월간 달력', list: '다�
 export default function App() {
   const route = useRoute();
   const { data, error, retry, live, phase } = useData();
-  const [scope, setScope] = useState<Scope>(() => (store.get('jbc-scope', 'edu') as Scope));
-  const [body, setBody] = useState('');
-  useEffect(() => store.set('jbc-scope', scope), [scope]);
+  const [body, setBody] = useState(() => store.get('jbc-body', ''));
+  useEffect(() => store.set('jbc-body', body), [body]);
 
   return (
     <div className="min-h-screen bg-white text-[var(--nr-text)] flex flex-col">
@@ -75,9 +74,9 @@ export default function App() {
           <HealthBanner data={data} live={live} />
         )}
         {(error && !STANDALONE) || !data ? null : route === 'calendar' ? (
-          <CalendarPage data={data} scope={scope} setScope={setScope} body={body} setBody={setBody} />
+          <CalendarPage data={data} body={body} setBody={setBody} />
         ) : route === 'list' ? (
-          <ListPage data={data} scope={scope} setScope={setScope} body={body} setBody={setBody} />
+          <ListPage data={data} body={body} setBody={setBody} />
         ) : route === 'sessions' ? (
           <SessionsPage data={data} />
         ) : (
@@ -123,39 +122,25 @@ const HealthBanner: React.FC<{ data: Payload; live: Live }> = ({ data }) => {
   );
 };
 
-/* ---------- 범위 고르개 ---------- */
+/* ---------- 회의체 고르개 — 교육위·본회의·예결특위(교육청 소관) ---------- */
 interface ScopeProps {
   data: Payload;
-  scope: Scope;
-  setScope: (s: Scope) => void;
   body: string;
   setBody: (b: string) => void;
 }
-const ScopeBar: React.FC<ScopeProps> = ({ data, scope, setScope, body, setBody }) => {
-  const bodies = useMemo(() => {
-    const c = new Map<string, number>();
-    data.events.filter((e) => !e.superseded && !e.minor).forEach((e) => c.set(e.body, (c.get(e.body) ?? 0) + 1));
-    return [...c.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).map(([b]) => b);
-  }, [data]);
+const ScopeBar: React.FC<ScopeProps> = ({ data, body, setBody }) => {
+  const count = (b: string) => visible(data.events, b, false).length;
   const pill = (on: boolean) =>
     `h-10 px-4 rounded-full text-[15px] transition-colors ${on ? 'bg-[var(--nr-p2)] text-white font-bold' : 'bg-[var(--nr-bg)] text-slate-800 hover:text-[var(--nr-p3)]'}`;
+  const items: [string, string][] = [['', '전체'], ['교육위원회', '교육위원회'], ['본회의', '본회의'], ['예산결산특별위원회', '예결특위']];
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="보는 범위">
-      <button type="button" className={pill(scope === 'edu' && !body)} onClick={() => (setScope('edu'), setBody(''))}>
-        교육청 관련 <span className="text-[13px] opacity-75">교육위·본회의·예결특위</span>
-      </button>
-      <button type="button" className={pill(scope === 'all' && !body)} onClick={() => (setScope('all'), setBody(''))}>
-        전체 회의
-      </button>
-      <label className="ml-auto inline-flex items-center gap-2 text-[14px] text-slate-600">
-        <span className="whitespace-nowrap">회의체만</span>
-        <select value={body} onChange={(e) => setBody(e.target.value)} className="h-10 rounded-[10px] border border-[var(--nr-line)] bg-white pl-3 pr-8 text-[15px]">
-          <option value="">고르지 않음</option>
-          {bodies.map((b) => (
-            <option key={b} value={b}>{b}</option>
-          ))}
-        </select>
-      </label>
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="회의체">
+      {items.map(([v, label]) => (
+        <button key={label} type="button" className={pill(body === v)} onClick={() => setBody(v)} aria-pressed={body === v}>
+          {label} <span className="text-[13px] opacity-70 tabular-nums">{count(v)}</span>
+        </button>
+      ))}
+      <span className="text-[13px] text-slate-500">예결특위는 교육청 소관·공통 일정만</span>
     </div>
   );
 };
@@ -165,7 +150,7 @@ const Hero: React.FC<{ data: Payload }> = ({ data }) => {
   const t = today();
   const s = sessionOn(data.sessions, t);
   const next = data.sessions.find((x) => x.start > t);
-  const edu = visible(data.events, 'edu', '', false);
+  const edu = visible(data.events, '', false);
   const todays = onDay(edu, t).sort(byTime);
   const upcoming = edu.filter((e) => e.start > t && e.body === '교육위원회').sort((a, b) => a.start.localeCompare(b.start) || byTime(a, b))[0];
   return (
@@ -223,12 +208,12 @@ const Hero: React.FC<{ data: Payload }> = ({ data }) => {
 
 /* ---------- 월간 달력 ---------- */
 const CalendarPage: React.FC<ScopeProps> = (p) => {
-  const { data, scope, body } = p;
+  const { data, body } = p;
   const t = today();
   const [ym, setYm] = useState(t.slice(0, 7));
   const [pick, setPick] = useState<string | null>(null);
   const [showMinor, setShowMinor] = useState(false);
-  const ev = useMemo(() => visible(data.events, scope, body, showMinor), [data, scope, body, showMinor]);
+  const ev = useMemo(() => visible(data.events, body, showMinor), [data, body, showMinor]);
   const first = parse(`${ym}-01`);
   const gridStart = addDays(`${ym}-01`, -first.getDay());
   const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
@@ -240,7 +225,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
   const monthSessions = data.sessions.filter((s) => s.end >= `${ym}-01` && s.start <= iso(last));
   return (
     <>
-      <PageTitle desc="회기·본회의·위원회 일정. 당일 운영상황이 올라온 날은 그 내용이 우선">월간 달력</PageTitle>
+      <PageTitle desc="회기와 교육위원회·본회의·예결특위(교육청 소관) 일정. 일일회의운영상황이 올라온 날은 그 내용이 우선">월간 달력</PageTitle>
       <div className="mt-6"><Hero data={data} /></div>
       <div className="mt-6"><ScopeBar {...p} /></div>
       <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -329,7 +314,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
         </div>
       </div>
       <Legend />
-      {pick && <DayModal data={data} d={pick} scope={scope} body={body} onClose={() => setPick(null)} />}
+      {pick && <DayModal data={data} d={pick} body={body} onClose={() => setPick(null)} />}
     </>
   );
 };
@@ -343,10 +328,10 @@ const Legend: React.FC = () => (
   </ul>
 );
 
-const DayModal: React.FC<{ data: Payload; d: string; scope: Scope; body: string; onClose: () => void }> = ({ data, d, scope, body, onClose }) => {
-  const [all, setAll] = useState(scope === 'all' && !body);
+const DayModal: React.FC<{ data: Payload; d: string; body: string; onClose: () => void }> = ({ data, d, body, onClose }) => {
+  const [all, setAll] = useState(!body);
   const s = sessionOn(data.sessions, d);
-  const items = onDay(visible(data.events, all ? 'all' : scope, all ? '' : body, true), d).sort(byTime);
+  const items = onDay(visible(data.events, all ? '' : body, true), d).sort(byTime);
   const hidden = onDay(data.events.filter((e) => e.notInDaily), d);
   const hasDaily = onDay(data.events, d).some((e) => e.source.type === '당일');
   return (
@@ -363,19 +348,19 @@ const DayModal: React.FC<{ data: Payload; d: string; scope: Scope; body: string;
         <Pill className={hasDaily ? 'bg-[#eaf6ec] text-[#267337]' : 'bg-[#f1f3f6] text-[#58616a]'}>
           {hasDaily ? '일일회의운영상황 반영' : '의사일정(안) 기준 · 바뀔 수 있음'}
         </Pill>
-        {!(scope === 'all' && !body) && (
+        {body && (
           <label className="ml-auto inline-flex items-center gap-2 text-[14px] text-slate-600">
-            <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} className="w-4 h-4" /> 전체 회의 보기
+            <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} className="w-4 h-4" /> 교육위·본회의·예결특위 모두 보기
           </label>
         )}
       </div>
       <div className="mt-4 space-y-3">
         {items.length ? items.map((e, i) => <EventCard key={i} e={e} />) : <p className="py-8 text-center text-slate-500">해당 범위 일정 없음</p>}
-        {hidden.filter((e) => all || EDU_BODIES.includes(e.body)).length > 0 && hasDaily && (
+        {hidden.filter((e) => isEdu(e) && (all || !body || e.body === body)).length > 0 && hasDaily && (
           <details className="rounded-[14px] bg-[var(--nr-bg)] px-4 py-3">
             <summary className="cursor-pointer text-[14px] font-bold text-slate-700">계획(안)에만 있던 일정</summary>
             <div className="mt-3 space-y-3">
-              {hidden.filter((e) => all || EDU_BODIES.includes(e.body)).map((e, i) => <EventCard key={i} e={e} />)}
+              {hidden.filter((e) => isEdu(e) && (all || !body || e.body === body)).map((e, i) => <EventCard key={i} e={e} />)}
             </div>
           </details>
         )}
@@ -386,10 +371,10 @@ const DayModal: React.FC<{ data: Payload; d: string; scope: Scope; body: string;
 
 /* ---------- 다가오는 일정 ---------- */
 const ListPage: React.FC<ScopeProps> = (p) => {
-  const { data, scope, body } = p;
+  const { data, body } = p;
   const t = today();
   const [past, setPast] = useState(false);
-  const ev = visible(data.events, scope, body, false);
+  const ev = visible(data.events, body, false);
   const from = past ? addDays(t, -14) : t;
   const until = addDays(t, 45);
   const days: string[] = [];

@@ -27,8 +27,8 @@ function sync() {
   try {
     const res = UrlFetchApp.fetch(SRC + '?v=' + Date.now(), { muteHttpExceptions: true });
     if (res.getResponseCode() !== 200) throw new Error('HTTP ' + res.getResponseCode());
-    const text = res.getContentText('UTF-8');
-    const d = JSON.parse(text);                       // 깨진 자료는 쓰지 않음
+    const d = JSON.parse(res.getContentText('UTF-8'));  // 깨진 자료는 쓰지 않음
+    const text = JSON.stringify(d);                   // 들여쓰기 빼서 조각 수 줄임
     if (!d.events || !d.sessions || !d.generated) throw new Error('자료 형식 이상');
 
     // 1) _data — 조각마다 '~' 를 앞에 붙여 수식·숫자로 바뀌지 않게
@@ -38,10 +38,10 @@ function sync() {
     data.clearContents();
     data.getRange(1, 1, rows.length, 1).setNumberFormat('@').setValues(rows);
 
-    // 2) 일정 — 사람이 보는 표 (당일 운영상황으로 대체된 계획은 뺌)
+    // 2) 일정 — 사람이 보는 표: 교육위·본회의·예결특위(교육청 소관·공통)만, 당일 운영상황으로 대체된 계획은 뺌
     const view = sheet_(ss, '일정');
     const head = ['시작일', '종료일', '시각', '회의체', '차수', '내용', '출처', '게시일'];
-    const body = d.events.filter(e => !e.superseded && !e.minor).map(e => [
+    const body = d.events.filter(e => !e.superseded && !e.minor && isEdu_(e)).map(e => [
       e.start, e.end, e.time || '', e.body, e.meeting || '', e.text,
       e.source.type === '당일' ? '일일회의운영상황' : '의사일정(안)', e.source.posted]);
     view.clearContents();
@@ -54,6 +54,15 @@ function sync() {
     throw err;                                         // 트리거 실패 메일로 알림
   }
   if (log.getLastRow() > 500) log.deleteRows(2, log.getLastRow() - 500);
+}
+
+/** 웹·내부망 파일과 같은 기준 (src/lib/data.ts 의 isEdu) */
+function isEdu_(e) {
+  if (e.body === '교육위원회' || e.body === '본회의') return true;
+  if (e.body !== '예산결산특별위원회') return false;
+  if (/교육청|교육감|교육비/.test(e.text)) return true;
+  if (/전북특별자치도(?!의회|교육청)|도정|부지사/.test(e.text)) return false;
+  return true;
 }
 
 function sheet_(ss, name) {

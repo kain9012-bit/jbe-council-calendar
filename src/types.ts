@@ -49,4 +49,3 @@ export interface Payload {
   documents: Source[];
 }
 
-export type Scope = 'edu' | 'all';

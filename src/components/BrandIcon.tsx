@@ -1,35 +1,29 @@
 import React from 'react';
 
 /**
- * 도의회 회의운영 달력 아이콘 — 남색 머리띠 달력 + 고리 2개 + 날짜 칸 6개.
- * 칸 하나(노랑)는 '오늘', 칸 하나(청록)는 '회의'. animate 면 칸이 차례로 켜짐(로딩 화면).
- * 색은 누리집 틀 네모 표식 4색(#3480cc · #32bdb8 · #fecd20 · #3a457f)에서 가져옴.
+ * 도의회 회의운영 달력 아이콘 — 의회 건물(지붕·기둥 4개·기단).
+ * 남색 바탕, 흰 건물, 청록 처마, 노란 점. animate 면 기둥이 차례로 켜짐(로딩 화면).
+ * 색은 누리집 틀 4색(#3480cc · #32bdb8 · #fecd20 · #3a457f).
  */
-export const BrandIcon: React.FC<{ size?: number; animate?: boolean; className?: string }> = ({ size = 32, animate, className = '' }) => {
-  const cells = [
-    [9, 17], [17, 17], [25, 17],
-    [9, 24], [17, 24], [25, 24],
-  ];
-  const fill = ['#dfe9f6', '#32bdb8', '#dfe9f6', '#dfe9f6', '#fecd20', '#dfe9f6'];
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className={className}>
-      <rect x="3" y="6" width="34" height="31" rx="6" fill="#ffffff" stroke="#3480cc" strokeWidth="2.5" />
-      <path d="M3 12a6 6 0 0 1 6-6h22a6 6 0 0 1 6 6v1.5H3z" fill="#3a457f" />
-      <rect x="11" y="2.5" width="3.5" height="8" rx="1.75" fill="#3480cc" />
-      <rect x="25.5" y="2.5" width="3.5" height="8" rx="1.75" fill="#3480cc" />
-      {cells.map(([x, y], i) => (
-        <rect
-          key={i}
-          x={x - 3}
-          y={y}
-          width="6"
-          height="5"
-          rx="1.4"
-          fill={fill[i]}
-          className={animate ? 'jbc-cell' : undefined}
-          style={animate ? { animationDelay: `${i * 0.18}s` } : undefined}
-        />
-      ))}
-    </svg>
-  );
-};
+export const BrandIcon: React.FC<{ size?: number; animate?: boolean; className?: string }> = ({ size = 32, animate, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className={className}>
+    <rect x="1" y="1" width="38" height="38" rx="9" fill="#3a457f" />
+    <path d="M20 7 L33 14 H7 Z" fill="#fff" />
+    <rect x="7" y="14" width="26" height="2.4" rx="0.6" fill="#32bdb8" />
+    {[9.5, 15.5, 21.5, 27.5].map((x, i) => (
+      <rect
+        key={x}
+        x={x}
+        y="17.5"
+        width="3"
+        height="11"
+        rx="0.8"
+        fill="#fff"
+        className={animate ? 'jbc-cell' : undefined}
+        style={animate ? { animationDelay: `${i * 0.2}s` } : undefined}
+      />
+    ))}
+    <rect x="6" y="29.5" width="28" height="3" rx="1" fill="#fff" />
+    <circle cx="20" cy="11.3" r="1.8" fill="#fecd20" />
+  </svg>
+);

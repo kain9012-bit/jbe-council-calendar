@@ -101,11 +101,16 @@ def tidy(x):
     x = re.sub(r'^\s*[οo○◦·]\s*', '', x, flags=re.M)
     return '\n'.join(l.strip() for l in x.split('\n') if l.strip())
 
-MINOR = ('의정활동자료수집', '행정사무감사 자료수집', '자료수집')
+def is_minor(text):
+    """회의가 아닌 날 — '자료 수집'이 들어 있고 대상 기관(-○○) 줄이 없는 일정
+    (의정활동자료수집, 행정사무감사 자료수집, 예산안 심사 자료 수집‧검토, 의정활동 자료 수집 및 논의 등)"""
+    flat = re.sub(r'[\s·ㆍ‧,/]', '', text)
+    return '자료수집' in flat and not any(l.strip().startswith('-') for l in text.split('\n'))
+
 def mk(start, end, time_, body, text, src, meeting=''):
     text = tidy(text)
     return dict(start=start, end=end, time=time_, body=body, meeting=meeting, text=text, source=src,
-                minor=text.replace(' ', '') in [m.replace(' ', '') for m in MINOR])
+                minor=is_minor(text))
 
 # ---------- 2) 상임위원회 의사일정 ----------
 def committee_plan(path, year, src):
@@ -378,12 +383,14 @@ def main():
     # 4) 병합
     merge(events, days, ss)
     for d, ev in days.items(): events += ev
+    # 다른 위원회·도청 예결 일정은 저장하지 않음 (읽기·점검은 전체로 한 뒤)
+    events = [e for e in events if is_edu(e)]
     events.sort(key=lambda e: (e['start'], e['time'] or '99', e['body']))
 
     # 5) 양 급감 점검 — 출처 종류별 일정 수가 직전보다 30% 넘게 줄면 경고
     if prev:
         for kind in ('계획', '당일'):
-            old_n = sum(1 for e in prev['events'] if e['source']['type'] == kind)
+            old_n = sum(1 for e in prev['events'] if e['source']['type'] == kind and is_edu(e))
             new_n = sum(1 for e in events if e['source']['type'] == kind)
             if old_n >= 20 and new_n < old_n * 0.7:
                 H.add('warn', '양 급감', f'{"의사일정(안)" if kind == "계획" else "일일회의운영상황"} 일정 {old_n}건 → {new_n}건. 읽기 누락 의심',
@@ -391,6 +398,18 @@ def main():
 
     out = dict(sessions=ss, events=events, documents=docs)
     return finish(out, H, now, prev=prev)
+
+EDU_RE = re.compile(r'교육청|교육감|교육비')
+DO_RE = re.compile(r'전북특별자치도(?!의회|교육청)|도정|부지사')
+
+def is_edu(e):
+    """저장할 일정 — 교육위·본회의·예결특위(교육청 소관·공통)만. 화면(src/lib/data.ts isEdu)과 같은 기준
+    예결특위: 교육청·교육감·교육비 → 교육청 / 전북특별자치도(도의회·도교육청 아님)·도정·부지사 → 도청(버림) / 둘 다 없으면 공통"""
+    if e['body'] in ('교육위원회', '본회의', '안내'): return True
+    if e['body'] != '예산결산특별위원회': return False
+    if EDU_RE.search(e['text']): return True
+    if DO_RE.search(e['text']): return False
+    return True
 
 def files_ok(err):
     """접속 오류가 아니라 '읽기'에 실패한 경우만 AI 로 넘긴다"""

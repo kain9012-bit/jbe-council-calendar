@@ -68,7 +68,7 @@ def validate(items, lo, hi, src, minor_words):
         flat = text.replace(' ', '')
         out.append(dict(start=s, end=en, time=str(e.get('time', '')).strip(), body=body,
                         meeting=str(e.get('meeting', '')).strip(), text=text, source=src,
-                        minor=any(w in flat for w in minor_words) and len(flat) <= 12, via='ai'))
+                        minor=('자료수집' in re.sub(r'[·ㆍ‧,/]', '', flat) and not any(l.strip().startswith('-') for l in text.split('\n'))), via='ai'))
     return out
 
 def read(path, kind, year, src, lo, hi, minor_words=('자료수집',), caller=None):
