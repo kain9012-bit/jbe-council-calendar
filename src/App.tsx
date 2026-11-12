@@ -278,12 +278,12 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
       </div>
 
       <div className="mt-3 sm:mt-4 overflow-hidden rounded-[14px] border border-[var(--nr-line)]">
-        <div className="grid grid-cols-7 bg-[#eef3f9] border-b border-[var(--nr-line)] text-center text-[13px] sm:text-[14px] font-bold">
+        <div className="grid grid-cols-7 sm:grid-cols-[minmax(0,3fr)_repeat(5,minmax(0,5fr))_minmax(0,3fr)] bg-[#eef3f9] border-b border-[var(--nr-line)] text-center text-[13px] sm:text-[14px] font-bold">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div key={d} className={`py-2 ${i === 0 ? 'text-[#c0392b]' : i === 6 ? 'text-[var(--nr-p3)]' : ''}`}>{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-7 sm:grid-cols-[minmax(0,3fr)_repeat(5,minmax(0,5fr))_minmax(0,3fr)]">
           {Array.from({ length: weeks * 7 }, (_, i) => {
             const d = addDays(gridStart, i);
             const inMonth = d.slice(0, 7) === ym;
@@ -319,12 +319,12 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
                 </span>
                 <span className="mt-1 hidden sm:flex flex-col gap-0.5">
                   {items.slice(0, 4).map((e, k) => (
-                    <span key={k} className={`block rounded px-1.5 py-[2px] text-[12px] leading-[16px] [overflow-wrap:anywhere] ${tone(e.body)} ${isMinor(e) ? 'opacity-60' : ''}`}>
+                    <span key={k} className={`block rounded px-1.5 py-[2px] text-[13px] leading-[17px] [overflow-wrap:anywhere] ${tone(e.body)} ${isMinor(e) ? 'opacity-60' : ''}`}>
                       <span className="block line-clamp-2">
                         <b>{short(e.body)}</b> <span className="tabular-nums">{/^\d/.test(e.time) ? e.time : ''}</span>{' '}
                         <span className="opacity-90">{firstLine(e)}</span>
                       </span>
-                      {subLine(e) && <span className="block mt-px text-[11px] leading-[14px] opacity-80 line-clamp-2">{subLine(e)}</span>}
+                      {subLine(e) && <span className="block mt-px text-[12px] leading-[15px] opacity-80 line-clamp-2">{subLine(e)}</span>}
                     </span>
                   ))}
                   {items.length > 4 && <span className="text-[12px] font-bold text-[var(--nr-p3)]">+{items.length - 4}건</span>}
