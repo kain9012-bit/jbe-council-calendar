@@ -86,5 +86,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "::error::도의회 일정 수집에 새 문제가 생김. 실행 요약(Summary)의 점검 결과 확인 후 수집기 수정 필요"
+          echo "::error::도의회 의사일정 수집에 새 문제가 생김. 실행 요약(Summary)의 점검 결과 확인 후 수집기 수정 필요"
           exit 1

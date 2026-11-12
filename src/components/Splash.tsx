@@ -53,7 +53,7 @@ export const Splash: React.FC<{ live: Live; phase: Phase; error: string; onRetry
     >
       <div className="w-full max-w-[460px] rounded-[20px] bg-white px-7 py-9 sm:px-10 shadow-[0_10px_40px_rgba(28,100,172,0.12)] text-center">
         <BrandIcon size={56} animate={!failed && !leaving} className="mx-auto" />
-        <p className="nr-title mt-4 text-[24px] text-[#002f63]">도의회 회의운영 달력</p>
+        <p className="nr-title mt-4 text-[24px] text-[#002f63] leading-snug">전북도의회 의사일정<br /><span className="text-[17px] text-[#3a457f]">(교육청 관련)</span></p>
         <p className="mt-1 text-[13px] text-slate-500">내부망용 파일 · 일정은 구글 시트에서 불러옴</p>
 
         <div className={`mt-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[15px] font-bold ${

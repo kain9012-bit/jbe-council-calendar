@@ -83,8 +83,8 @@ export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live;
         <a href="#/" className="flex items-center gap-2.5">
           <BrandIcon size={34} className="shrink-0" />
           <span className="leading-tight">
-            <strong className="nr-title block text-[1.375rem] text-[#002f63]">도의회 회의운영 달력</strong>
-            <span className="block text-[12px] text-slate-500"><span className="sm:hidden">전북특별자치도교육청</span><span className="hidden sm:inline">전북특별자치도교육청 · 전북특별자치도의회 일정</span></span>
+            <strong className="nr-title block text-[1.375rem] text-[#002f63]">전북도의회 의사일정<span className="ml-1.5 text-[0.8em] text-[#3a457f]">(교육청 관련)</span></strong>
+            <span className="block text-[12px] text-slate-500">전북특별자치도교육청 · 교육위원회·본회의·예결특위</span>
           </span>
         </a>
         {STANDALONE ? (
@@ -162,8 +162,8 @@ export interface LnbSub {
 export const Lnb: React.FC<{ active: MenuKey; subs?: Partial<Record<MenuKey, LnbSub[]>> }> = ({ active, subs }) => (
   <aside className="hidden lg:block w-[200px] min-[1200px]:w-[280px] shrink-0 jbe-noprint" aria-label="메뉴">
     <h2 className="flex flex-col items-center justify-center gap-1.5 h-[130px] rounded-[10px_10px_40px_10px] bg-[var(--nr-p1)] text-white shadow-[0_0_10px_rgba(35,88,195,0.1)]">
-      <span className="nr-title text-[22px] min-[1200px]:text-[28px] leading-none">도의회 일정</span>
-      <span className="text-[13px] min-[1200px]:text-[14px] font-medium text-white/85">회의운영 달력</span>
+      <span className="nr-title text-[22px] min-[1200px]:text-[28px] leading-none">전북도의회</span>
+      <span className="text-[13px] min-[1200px]:text-[14px] font-medium text-white/85">의사일정(교육청 관련)</span>
     </h2>
     <ul className="mt-5 space-y-2">
       {MENU.map((m) => {
@@ -246,7 +246,7 @@ export const PageTitle: React.FC<{ children: React.ReactNode; desc?: React.React
 export const SiteFooter: React.FC = () => (
   <footer className="mt-10 sm:mt-16 bg-[#f7f8fa] border-t border-[var(--nr-line)] jbe-noprint">
     <div className={`${BOX} py-6 sm:py-8 text-[13px] sm:text-[14px] text-slate-600 space-y-2`}>
-      <p className="nr-title text-[18px] text-[#002f63]">도의회 회의운영 달력</p>
+      <p className="nr-title text-[18px] text-[#002f63]">전북도의회 의사일정(교육청 관련)</p>
       <p className="hidden sm:block">전북특별자치도의회 회기와 교육위원회·본회의·예결특위(교육청 소관) 일정을 교육청 직원이 한눈에 보도록 모은 비공식 업무지원 화면</p>
       <p>
         <b className="text-slate-800">담당</b> 정책기획과 빅데이터담당 · <b className="text-slate-800">성격</b> 비공식 · 일정 확정은 도의회 원문 기준

@@ -66,7 +66,7 @@ export default function App() {
     <div className="min-h-screen bg-white text-[var(--nr-text)] flex flex-col">
       <SiteHeader active={route} asOf={data?.generated.replace('T', ' ').slice(0, 16)} live={live} onRetry={retry} />
       {STANDALONE && <Splash live={live} phase={phase} error={error} onRetry={retry} />}
-      <SubLayout lnb={<Lnb active={route} />} trail={['도의회 일정', TITLE[route]]}>
+      <SubLayout lnb={<Lnb active={route} />} trail={['전북도의회 의사일정', TITLE[route]]}>
         {error && !STANDALONE ? (
           <div className="rounded-[14px] border border-[var(--nr-line)] p-8 text-center">
             <p className="nr-title text-[20px]">일정 자료를 받지 못함</p>

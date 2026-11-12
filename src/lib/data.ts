@@ -58,7 +58,7 @@ export async function downloadStandalone() {
   const html = await r.text();
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-  a.download = '도의회_회의운영_달력.html';
+  a.download = '전북도의회_의사일정_교육청관련.html';
   document.body.appendChild(a);
   a.click();
   a.remove();
