@@ -5,7 +5,7 @@ import { Splash } from './components/Splash';
 import { DownloadButton, Lnb, Modal, PageTitle, SiteFooter, SiteHeader, SubLayout, TopButton, type MenuKey } from './components/Shell';
 import { EventCard, Pill } from './components/Event';
 import {
-  BOARD_DAILY, BOARD_PLAN, MONTHLY, isEdu, STANDALONE, type Live, addDays, byTime, daysBetween, dow, firstLine, iso, md, onDay, parse,
+  BOARD_DAILY, BOARD_PLAN, MONTHLY, isEdu, isMinor, STANDALONE, type Live, addDays, byTime, daysBetween, dow, firstLine, iso, md, onDay, parse,
   sessionOn, short, span, today, tone, useData, visible,
 } from './lib/data';
 
@@ -296,7 +296,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
                 </span>
                 <span className="mt-1 hidden sm:flex flex-col gap-0.5">
                   {items.slice(0, 4).map((e, k) => (
-                    <span key={k} className={`block rounded px-1.5 py-[2px] text-[12px] leading-[16px] [overflow-wrap:anywhere] line-clamp-2 ${tone(e.body)} ${e.minor ? 'opacity-60' : ''}`}>
+                    <span key={k} className={`block rounded px-1.5 py-[2px] text-[12px] leading-[16px] [overflow-wrap:anywhere] line-clamp-2 ${tone(e.body)} ${isMinor(e) ? 'opacity-60' : ''}`}>
                       <b>{short(e.body)}</b> <span className="tabular-nums">{/^\d/.test(e.time) ? e.time : ''}</span>{' '}
                       <span className="opacity-90">{firstLine(e)}</span>
                     </span>

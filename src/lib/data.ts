@@ -171,9 +171,13 @@ export const daysBetween = (a: string, b: string) => Math.round((parse(b).getTim
 
 export const sessionOn = (ss: Session[], d: string) => ss.find((s) => s.start <= d && d <= s.end);
 
+/** 회의가 아닌 날 — '자료 수집'이 들어 있고 대상 기관(-○○) 줄이 없는 일정. 수집기(is_minor)와 같은 기준 */
+export const isMinor = (e: CEvent) =>
+  e.minor || (/자료수집/.test(e.text.replace(/[\s·ㆍ‧,/]/g, '')) && !e.text.split('\n').some((l) => l.trim().startsWith('-')));
+
 /** 화면에 보일 일정 — 교육청 소관만. 당일 운영상황으로 대체된 계획, 자료수집 같은 빈 일정은 기본 숨김 */
 export function visible(ev: CEvent[], body: string, showMinor: boolean) {
-  return ev.filter((e) => !e.superseded && (showMinor || !e.minor) && isEdu(e) && (!body || e.body === body));
+  return ev.filter((e) => !e.superseded && (showMinor || !isMinor(e)) && isEdu(e) && (!body || e.body === body));
 }
 
 export const onDay = (ev: CEvent[], d: string) => ev.filter((e) => e.start <= d && d <= e.end);
