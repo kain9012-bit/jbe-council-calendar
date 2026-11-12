@@ -305,7 +305,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
                 </span>
                 <span className="mt-1 flex sm:hidden flex-wrap gap-0.5">
                   {items.slice(0, 6).map((e, k) => (
-                    <span key={k} className={`w-1.5 h-1.5 rounded-full ${e.body === '본회의' ? 'bg-[var(--nr-p2)]' : e.body === '교육위원회' ? 'bg-[var(--nr-p3)]' : e.body === '예산결산특별위원회' ? 'bg-[#32bdb8]' : 'bg-slate-400'}`} />
+                    <span key={k} className={`w-1.5 h-1.5 rounded-full ${e.body === '본회의' ? 'bg-[var(--nr-p2)]' : e.body === '교육위원회' ? 'bg-[var(--nr-p3)]' : e.body === '예산결산특별위원회' ? 'bg-[#7cc4ef]' : 'bg-slate-400'}`} />
                   ))}
                 </span>
               </button>

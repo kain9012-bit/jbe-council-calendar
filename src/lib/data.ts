@@ -45,7 +45,7 @@ export const tone = (b: string) =>
     : b === '교육위원회'
       ? 'bg-[var(--nr-p3)] text-white'
       : b === '예산결산특별위원회'
-        ? 'bg-[#e3f6f5] text-[#0b6b67] ring-1 ring-inset ring-[#9fdedb]'
+        ? 'bg-[#dcf0fc] text-[#0b4a78] ring-1 ring-inset ring-[#b5dcf5]'
         : 'bg-[#f1f3f6] text-[#3d4651]';
 
 /** 내부망용 단일 파일 — 자료는 늘 구글 시트에서 읽음(파일 안에 일정 없음) */
