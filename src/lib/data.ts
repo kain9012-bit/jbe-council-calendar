@@ -187,15 +187,18 @@ export const timeKey = (t: string) => (/^\d{1,2}:\d{2}/.test(t) ? t.padStart(5, 
 export const byTime = (a: CEvent, b: CEvent) =>
   timeKey(a.time).localeCompare(timeKey(b.time)) || (EDU_BODIES.indexOf(b.body) - EDU_BODIES.indexOf(a.body));
 
-/** '-' 줄의 국·기관 이름(예: 교육국 · 전북교육인권센터). '제안자 : …' 같은 줄은 뺌 */
-export const subLine = (e: CEvent) =>
-  e.text
+/** '-' 줄 중 국·기관 이름만(예: 교육국 · 전북교육인권센터). 안건 목록·'제안자 : …' 같은 줄은 뺌 */
+const DEPT_END = /(국|관|인|센터|원|청|실|과|단|질의|\))$/;
+const NOT_DEPT = /^전북특별자치도|안$|건$|조례|동의|계획|년도|보고/;
+export const subLine = (e: CEvent) => {
+  const items = e.text
     .split('\n')
     .filter((x) => /^\s*-/.test(x) && !x.includes(':'))
     .flatMap((x) => x.replace(/^\s*-\s*/, '').split(/\s*,\s*/))
     .map((x) => x.trim())
-    .filter(Boolean)
-    .join(' · ');
+    .filter((x) => x && x.length <= 20 && DEPT_END.test(x) && !NOT_DEPT.test(x));
+  return items.length <= 6 ? items.join(' · ') : '';
+};
 
 export const firstLine = (e: CEvent) => {
   if (e.body === '본회의' && e.meeting) return `${e.meeting} 본회의`;
