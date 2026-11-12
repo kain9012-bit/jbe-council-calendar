@@ -278,12 +278,12 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
       </div>
 
       <div className="mt-3 sm:mt-4 overflow-hidden rounded-[14px] border border-[var(--nr-line)]">
-        <div className="grid grid-cols-7 sm:grid-cols-[minmax(0,3fr)_repeat(5,minmax(0,5fr))_minmax(0,3fr)] bg-[#eef3f9] border-b border-[var(--nr-line)] text-center text-[13px] sm:text-[14px] font-bold">
+        <div className="grid grid-cols-7 bg-[#eef3f9] border-b border-[var(--nr-line)] text-center text-[13px] sm:text-[14px] font-bold">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div key={d} className={`py-2 ${i === 0 ? 'text-[#c0392b]' : i === 6 ? 'text-[var(--nr-p3)]' : ''}`}>{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7 sm:grid-cols-[minmax(0,3fr)_repeat(5,minmax(0,5fr))_minmax(0,3fr)]">
+        <div className="grid grid-cols-7">
           {Array.from({ length: weeks * 7 }, (_, i) => {
             const d = addDays(gridStart, i);
             const inMonth = d.slice(0, 7) === ym;
