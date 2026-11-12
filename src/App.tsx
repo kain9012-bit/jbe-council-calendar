@@ -24,6 +24,19 @@ const useRoute = () => {
   return ['calendar', 'sessions', 'about'].includes(r) ? r : 'calendar';
 };
 
+/** 휴대폰 폭(640px 미만) — 달력 날짜를 누르면 창 대신 달력 아래에 그날 일정 */
+const useNarrow = () => {
+  const q = '(max-width: 639px)';
+  const [n, setN] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia(q);
+    const f = () => setN(m.matches);
+    m.addEventListener('change', f);
+    return () => m.removeEventListener('change', f);
+  }, []);
+  return n;
+};
+
 const store = {
   get: (k: string, d: string) => {
     try {
@@ -128,17 +141,27 @@ interface ScopeProps {
 }
 const ScopeBar: React.FC<ScopeProps> = ({ data, body, setBody }) => {
   const count = (b: string) => visible(data.events, b, false).length;
-  const pill = (on: boolean) =>
-    `h-10 px-4 rounded-full text-[15px] transition-colors ${on ? 'bg-[var(--nr-p2)] text-white font-bold' : 'bg-[var(--nr-bg)] text-slate-800 hover:text-[var(--nr-p3)]'}`;
-  const items: [string, string][] = [['', '전체'], ['교육위원회', '교육위원회'], ['본회의', '본회의'], ['예산결산특별위원회', '예결특위']];
+  const items: [string, string, string][] = [['', '전체', '전체'], ['교육위원회', '교육위원회', '교육위'], ['본회의', '본회의', '본회의'], ['예산결산특별위원회', '예결특위', '예결특위']];
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="회의체">
-      {items.map(([v, label]) => (
-        <button key={label} type="button" className={pill(body === v)} onClick={() => setBody(v)} aria-pressed={body === v}>
-          {label} <span className="text-[13px] opacity-70 tabular-nums">{count(v)}</span>
-        </button>
-      ))}
-      <span className="text-[13px] text-slate-500">예결특위는 교육청 소관·공통 일정만</span>
+    <div role="group" aria-label="회의체" className="grid grid-cols-4 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+      {items.map(([v, label, shortLabel]) => {
+        const on = body === v;
+        return (
+          <button
+            key={label}
+            type="button"
+            onClick={() => setBody(v)}
+            aria-pressed={on}
+            className={`h-10 px-1 sm:px-4 rounded-full text-[14px] sm:text-[15px] whitespace-nowrap transition-colors ${
+              on ? 'bg-[var(--nr-p2)] text-white font-bold' : 'bg-[var(--nr-bg)] text-slate-800 hover:text-[var(--nr-p3)]'
+            }`}
+          >
+            <span className="sm:hidden">{shortLabel}</span>
+            <span className="hidden sm:inline">{label}</span> <span className="text-[12px] sm:text-[13px] opacity-70 tabular-nums">{count(v)}</span>
+          </button>
+        );
+      })}
+      <span className="hidden sm:inline text-[13px] text-slate-500">예결특위는 교육청 소관·공통 일정만</span>
     </div>
   );
 };
@@ -152,13 +175,13 @@ const Hero: React.FC<{ data: Payload }> = ({ data }) => {
   const todays = onDay(edu, t).sort(byTime);
   const upcoming = edu.filter((e) => e.start > t && e.body === '교육위원회').sort((a, b) => a.start.localeCompare(b.start) || byTime(a, b))[0];
   return (
-    <section className="overflow-hidden rounded-[20px] bg-[var(--nr-p2)] text-white px-5 py-7 sm:px-10 sm:py-9">
+    <section className="overflow-hidden rounded-[16px] sm:rounded-[20px] bg-[var(--nr-p2)] text-white px-4 py-5 sm:px-10 sm:py-9">
       <p className="text-[14px] text-white/75 tabular-nums">{md(t)} 오늘</p>
-      <h2 className="nr-title mt-1 text-[22px] sm:text-[28px] leading-snug">
+      <h2 className="nr-title mt-1 text-[19px] sm:text-[28px] leading-snug">
         {s ? (
           <>
             {s.title.replace('전북특별자치도의회 ', '')} <em className="not-italic text-[#ffd85c] tabular-nums">{daysBetween(s.start, t)}일째</em>
-            <span className="text-white/70 text-[18px] sm:text-[22px]"> / {daysBetween(s.start, s.end)}일간</span>
+            <span className="text-white/70 text-[15px] sm:text-[22px] whitespace-nowrap"> / {daysBetween(s.start, s.end)}일간</span>
           </>
         ) : next ? (
           <>
@@ -172,8 +195,8 @@ const Hero: React.FC<{ data: Payload }> = ({ data }) => {
       <p className="mt-1 text-[14px] text-white/75">
         {s ? `${span(s.start, s.end)} · ${s.kind}` : next ? `${next.title.replace('전북특별자치도의회 ', '')} · ${span(next.start, next.end)}` : ''}
       </p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <div className="min-w-0 rounded-[14px] bg-white/10 px-4 py-3">
+      <div className="mt-4 sm:mt-5 grid gap-2 sm:gap-3 sm:grid-cols-2">
+        <div className="min-w-0 rounded-[12px] sm:rounded-[14px] bg-white/10 px-3 py-2.5 sm:px-4 sm:py-3">
           <p className="text-[13px] font-bold text-white/70">오늘 교육청 관련 회의</p>
           {todays.length ? (
             <ul className="mt-1.5 space-y-1 text-[15px]">
@@ -189,7 +212,7 @@ const Hero: React.FC<{ data: Payload }> = ({ data }) => {
             <p className="mt-1.5 text-[15px] text-white/85">없음</p>
           )}
         </div>
-        <div className="min-w-0 rounded-[14px] bg-white/10 px-4 py-3">
+        <div className="min-w-0 rounded-[12px] sm:rounded-[14px] bg-white/10 px-3 py-2.5 sm:px-4 sm:py-3">
           <p className="text-[13px] font-bold text-white/70">다음 교육위원회</p>
           {upcoming ? (
             <p className="mt-1.5 text-[15px]">
@@ -210,6 +233,8 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
   const t = today();
   const [ym, setYm] = useState(t.slice(0, 7));
   const [pick, setPick] = useState<string | null>(null);
+  const [sel, setSel] = useState(t);
+  const narrow = useNarrow();
   const [showMinor, setShowMinor] = useState(false);
   const ev = useMemo(() => visible(data.events, body, showMinor), [data, body, showMinor]);
   const first = parse(`${ym}-01`);
@@ -219,29 +244,30 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
   const move = (n: number) => {
     const d = new Date(first.getFullYear(), first.getMonth() + n, 1);
     setYm(iso(d).slice(0, 7));
+    setSel(iso(d));
   };
   const monthSessions = data.sessions.filter((s) => s.end >= `${ym}-01` && s.start <= iso(last));
   return (
     <>
       <PageTitle desc="회기와 교육위원회·본회의·예결특위(교육청 소관) 일정. 일일회의운영상황이 올라온 날은 그 내용이 우선">월간 달력</PageTitle>
-      <div className="mt-6"><Hero data={data} /></div>
-      <div className="mt-6"><ScopeBar {...p} /></div>
-      <div className="mt-5 flex flex-wrap items-center gap-3">
+      <div className="mt-4 sm:mt-6"><Hero data={data} /></div>
+      <div className="mt-4 sm:mt-6"><ScopeBar {...p} /></div>
+      <div className="mt-4 sm:mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex items-center gap-1">
           <button type="button" onClick={() => move(-1)} aria-label="이전 달" className="grid place-items-center w-10 h-10 rounded-full border border-[var(--nr-line)] hover:border-[var(--nr-p3)]">
             <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           </button>
-          <h2 className="nr-title w-[150px] text-center text-[24px] tabular-nums">{first.getFullYear()}. {first.getMonth() + 1}.</h2>
+          <h2 className="nr-title w-[120px] sm:w-[150px] text-center text-[21px] sm:text-[24px] tabular-nums">{first.getFullYear()}. {first.getMonth() + 1}.</h2>
           <button type="button" onClick={() => move(1)} aria-label="다음 달" className="grid place-items-center w-10 h-10 rounded-full border border-[var(--nr-line)] hover:border-[var(--nr-p3)]">
             <ChevronRight className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
         {ym !== t.slice(0, 7) && (
-          <button type="button" onClick={() => setYm(t.slice(0, 7))} className="h-9 px-3 rounded-[10px] border border-[var(--nr-line)] text-[14px] font-bold hover:border-[var(--nr-p3)]">
+          <button type="button" onClick={() => (setYm(t.slice(0, 7)), setSel(t))} className="h-9 px-3 rounded-[10px] border border-[var(--nr-line)] text-[14px] font-bold hover:border-[var(--nr-p3)]">
             이번 달
           </button>
         )}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="hidden sm:flex flex-wrap gap-1.5">
           {monthSessions.map((s) => (
             <Pill key={s.no} className={s.kind === '정례회' ? 'bg-[#e8f0fb] text-[var(--nr-p3)]' : 'bg-[#e3f6f5] text-[#0b6b67]'}>
               제{s.no}회 {s.kind} {span(s.start, s.end)}
@@ -250,12 +276,12 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
         </div>
         <label className="ml-auto inline-flex items-center gap-2 text-[14px] text-slate-600">
           <input type="checkbox" checked={showMinor} onChange={(e) => setShowMinor(e.target.checked)} className="w-4 h-4" />
-          자료수집 기간도 표시
+          <span className="sm:hidden">자료수집 표시</span><span className="hidden sm:inline">자료수집 기간도 표시</span>
         </label>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-[14px] border border-[var(--nr-line)]">
-        <div className="grid grid-cols-7 bg-[#eef3f9] border-b border-[var(--nr-line)] text-center text-[14px] font-bold">
+      <div className="mt-3 sm:mt-4 overflow-hidden rounded-[14px] border border-[var(--nr-line)]">
+        <div className="grid grid-cols-7 bg-[#eef3f9] border-b border-[var(--nr-line)] text-center text-[13px] sm:text-[14px] font-bold">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
             <div key={d} className={`py-2 ${i === 0 ? 'text-[#c0392b]' : i === 6 ? 'text-[var(--nr-p3)]' : ''}`}>{d}</div>
           ))}
@@ -267,16 +293,18 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
             const s = sessionOn(data.sessions, d);
             const items = onDay(ev, d).sort(byTime);
             const isToday = d === t;
+            const isSel = narrow && d === sel;
             const changed = items.some((e) => e.changed && e.changed.length);
             const label = s && (d === s.start || (parse(d).getDay() === 0 && d <= s.end)) ? `제${s.no}회` : '';
             return (
               <button
                 key={d}
                 type="button"
-                onClick={() => setPick(d)}
-                className={`relative flex flex-col justify-start items-stretch min-w-0 min-h-[84px] sm:min-h-[132px] border-b border-r border-[var(--nr-line)] p-1 sm:p-1.5 pt-2 sm:pt-2.5 text-left transition-colors hover:bg-[var(--nr-bg)] ${
+                onClick={() => (narrow ? setSel(d) : setPick(d))}
+                aria-pressed={narrow ? isSel : undefined}
+                className={`relative flex flex-col justify-start items-center sm:items-stretch min-w-0 min-h-[56px] sm:min-h-[132px] border-b border-r border-[var(--nr-line)] p-1 sm:p-1.5 pt-2 sm:pt-2.5 sm:text-left transition-colors hover:bg-[var(--nr-bg)] ${
                   (i + 1) % 7 === 0 ? 'border-r-0' : ''
-                } ${inMonth ? '' : 'bg-[#fafbfc] text-slate-400'}`}
+                } ${isSel ? 'bg-[var(--nr-bg)] ring-2 ring-inset ring-[var(--nr-p3)]' : inMonth ? '' : 'bg-[#fafbfc] text-slate-400'}`}
               >
                 {s && (
                   <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${s.kind === '정례회' ? 'bg-[var(--nr-p1)]' : 'bg-[#32bdb8]'} ${inMonth ? '' : 'opacity-40'}`} />
@@ -290,7 +318,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
                     {parse(d).getDate()}
                   </span>
                   {label && <span className={`hidden sm:inline text-[11px] font-bold ${s?.kind === '정례회' ? 'text-[var(--nr-p1)]' : 'text-[#0b6b67]'}`}>{label}</span>}
-                  {changed && <span className="ml-auto w-2 h-2 rounded-full bg-[#f0a500]" title="계획과 다름" />}
+                  {changed && <span className="hidden sm:inline ml-auto w-2 h-2 rounded-full bg-[#f0a500]" title="계획과 다름" />}
                 </span>
                 <span className="mt-1 hidden sm:flex flex-col gap-0.5">
                   {items.slice(0, 4).map((e, k) => (
@@ -301,7 +329,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
                   ))}
                   {items.length > 4 && <span className="text-[12px] font-bold text-[var(--nr-p3)]">+{items.length - 4}건</span>}
                 </span>
-                <span className="mt-1 flex sm:hidden flex-wrap gap-0.5">
+                <span className="mt-1 flex sm:hidden flex-wrap justify-center gap-0.5">
                   {items.slice(0, 6).map((e, k) => (
                     <span key={k} className={`w-1.5 h-1.5 rounded-full ${e.body === '본회의' ? 'bg-[var(--nr-p2)]' : e.body === '교육위원회' ? 'bg-[var(--nr-p3)]' : e.body === '예산결산특별위원회' ? 'bg-[#7cc4ef]' : 'bg-slate-400'}`} />
                   ))}
@@ -312,6 +340,7 @@ const CalendarPage: React.FC<ScopeProps> = (p) => {
         </div>
       </div>
       <Legend />
+      {narrow && <DayAgenda data={data} d={sel} body={body} showMinor={showMinor} />}
       {pick && <DayModal data={data} d={pick} body={body} showMinor={showMinor} onClose={() => setPick(null)} />}
     </>
   );
@@ -322,9 +351,31 @@ const Legend: React.FC = () => (
     <li className="flex items-center gap-1.5"><span className="w-4 h-1 bg-[var(--nr-p1)]" /> 정례회 기간</li>
     <li className="flex items-center gap-1.5"><span className="w-4 h-1 bg-[#32bdb8]" /> 임시회 기간</li>
     <li className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#f0a500]" /> 계획(안)과 달라진 회의 있음</li>
-    <li className="flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" aria-hidden="true" /> 날짜 누르면 상세</li>
+    <li className="flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" aria-hidden="true" /> <span className="sm:hidden">날짜 누르면 아래에 일정</span><span className="hidden sm:inline">날짜 누르면 상세</span></li>
   </ul>
 );
+
+/** 휴대폰 — 달력 바로 아래에 고른 날(처음엔 오늘)의 일정 */
+const DayAgenda: React.FC<{ data: Payload; d: string; body: string; showMinor: boolean }> = ({ data, d, body, showMinor }) => {
+  const s = sessionOn(data.sessions, d);
+  const items = onDay(visible(data.events, body, showMinor), d).sort(byTime);
+  const hasDaily = onDay(data.events, d).some((e) => e.source.type === '당일');
+  return (
+    <section className="mt-5" aria-live="polite">
+      <h2 className="flex flex-wrap items-baseline gap-x-2 border-b-2 border-[#33363d] pb-2">
+        <span className="nr-title text-[20px] tabular-nums">{md(d)}</span>
+        {d === today() && <Pill className="bg-[var(--nr-p3)] text-white">오늘</Pill>}
+        <span className="text-[13px] text-slate-500">{s ? `제${s.no}회 ${s.kind} ${daysBetween(s.start, d)}일째` : '회기 아님'}</span>
+      </h2>
+      {items.length > 0 && (
+        <p className="mt-2 text-[12px] text-slate-500">{hasDaily ? '일일회의운영상황 반영' : '의사일정(안) 기준 · 바뀔 수 있음'}</p>
+      )}
+      <div className="mt-2 space-y-2.5">
+        {items.length ? items.map((e, i) => <EventCard key={i} e={e} />) : <p className="py-6 text-center text-[15px] text-slate-500">회의 없음</p>}
+      </div>
+    </section>
+  );
+};
 
 const DayModal: React.FC<{ data: Payload; d: string; body: string; showMinor: boolean; onClose: () => void }> = ({ data, d, body, showMinor, onClose }) => {
   const [all, setAll] = useState(!body);
@@ -384,7 +435,23 @@ const SessionsPage: React.FC<{ data: Payload }> = ({ data }) => {
               <span className="text-[15px] font-extrabold text-[var(--nr-p3)] tabular-nums">{ss.length}회</span>
               <span className="text-[13px] text-slate-500 tabular-nums">회기일수 합 {total}일</span>
             </h2>
-            <div className="mt-3 overflow-x-auto">
+            {/* 휴대폰: 표 대신 한 줄씩 */}
+            <ul className="sm:hidden mt-3 border-t-2 border-[#33363d] divide-y divide-[var(--nr-line)]">
+              {ss.map((s) => {
+                const st = s.end < t ? '지남' : s.start > t ? '예정' : '진행 중';
+                return (
+                  <li key={s.no} className={`py-2.5 px-1 ${st === '진행 중' ? 'bg-[var(--nr-bg)]' : ''}`}>
+                    <div className="flex items-center gap-2">
+                      <b className="tabular-nums text-[15px]">제{s.no}회</b>
+                      <span className="text-[14px]">{s.title.match(/제\d차 정례회/)?.[0] ?? s.kind}</span>
+                      <Pill className={`ml-auto ${st === '진행 중' ? 'bg-[#eaf6ec] text-[#267337]' : st === '예정' ? 'bg-[var(--nr-bg)] text-[var(--nr-p3)]' : 'bg-[#f1f3f6] text-[#58616a]'}`}>{st}</Pill>
+                    </div>
+                    <p className="mt-0.5 text-[14px] text-slate-600 tabular-nums">{span(s.start, s.end)} · {daysBetween(s.start, s.end)}일</p>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden sm:block mt-3 overflow-x-auto">
               <table className="w-full min-w-[560px] border-t-2 border-[#33363d] text-[15px]">
                 <thead className="bg-[#eef3f9]">
                   <tr>

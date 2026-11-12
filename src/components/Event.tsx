@@ -26,12 +26,12 @@ export const EventCard: React.FC<{ e: CEvent; showDate?: boolean }> = ({ e, show
   const agenda = e.agenda ?? [];
   const [more, setMore] = useState(false);
   return (
-    <article className={`rounded-[14px] border p-4 ${e.notInDaily ? 'border-dashed border-slate-300 bg-slate-50/60' : 'border-[var(--nr-line)] bg-white'}`}>
+    <article className={`rounded-[14px] border p-3 sm:p-4 ${e.notInDaily ? 'border-dashed border-slate-300 bg-slate-50/60' : 'border-[var(--nr-line)] bg-white'}`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className={`inline-flex items-center h-[26px] px-2.5 rounded-md text-[13px] font-bold ${tone(e.body)}`}>{e.body}</span>
         {e.meeting && <span className="text-[14px] font-bold text-slate-700">{e.meeting}</span>}
         <span className="text-[15px] font-bold tabular-nums text-slate-900">{showDate ? span(e.start, e.end) + ' ' : ''}{e.time}</span>
-        <span className="ml-auto flex flex-wrap gap-1.5">
+        <span className="sm:ml-auto flex flex-wrap gap-1.5">
           {e.changed && e.changed.length > 0 && (
             <Pill className="bg-[#fff3db] text-[#8a5c00]">
               <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" /> 계획과 다름

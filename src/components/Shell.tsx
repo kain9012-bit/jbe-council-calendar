@@ -80,29 +80,19 @@ export const SiteHeader: React.FC<{ active: MenuKey; asOf?: string; live?: Live;
   <header className="bg-white border-b border-[var(--nr-line)] jbe-noprint">
     <div className={BOX}>
       <div className="hidden md:flex justify-end gap-3 pt-3 text-[13px] text-slate-600">
-        {STANDALONE ? <b className="text-slate-800">내부망용 파일</b> : <DownloadButton />}
-        <span className="text-slate-300" aria-hidden="true">|</span>
-        <span>비공식 업무지원 도구</span>
-        <span className="text-slate-300" aria-hidden="true">|</span>
         <span className="tabular-nums">{asOf ? `${asOf} 수집 기준` : '수집 시점 확인 중'}</span>
-        <span className="text-slate-300" aria-hidden="true">|</span>
-        <Ext href={BOARD_PLAN} className="hover:text-[var(--nr-p3)]">도의회 의사일정 게시판</Ext>
-        <span className="text-slate-300" aria-hidden="true">|</span>
-        <Ext href={BOARD_DAILY} className="hover:text-[var(--nr-p3)]">일일회의운영상황</Ext>
       </div>
       <div className="flex items-center gap-4 py-3 md:py-2">
         <a href="#/" className="flex items-center gap-2.5">
           <BrandIcon size={34} className="shrink-0" />
           <span className="leading-tight">
             <strong className="nr-title block text-[1.375rem] text-[#002f63]">도의회 회의운영 달력</strong>
-            <span className="block text-[12px] text-slate-500">전북특별자치도교육청 · 전북특별자치도의회 일정</span>
+            <span className="block text-[12px] text-slate-500"><span className="sm:hidden">전북특별자치도교육청</span><span className="hidden sm:inline">전북특별자치도교육청 · 전북특별자치도의회 일정</span></span>
           </span>
         </a>
         {STANDALONE ? (
-          <span className="ml-auto"><SheetStatus live={live} asOf={asOf} onRetry={onRetry} /></span>
-        ) : (
-          <span className="ml-auto md:hidden"><DownloadButton variant="small" /></span>
-        )}
+          <span className="ml-auto shrink-0"><SheetStatus live={live} asOf={asOf} onRetry={onRetry} /></span>
+        ) : null}
       </div>
     </div>
     <nav aria-label="주메뉴" className="border-t border-[var(--nr-line)] lg:hidden">
@@ -141,7 +131,7 @@ export const Breadcrumb: React.FC<{ trail: string[] }> = ({ trail }) => {
     }
   };
   return (
-    <div className="h-12 lg:h-[60px] flex items-center gap-2 text-[13px] text-slate-600 jbe-noprint">
+    <div className="hidden sm:flex h-12 lg:h-[60px] items-center gap-2 text-[13px] text-slate-600 jbe-noprint">
       <a href="#/" aria-label="처음으로" className="hover:text-[var(--nr-p3)]">
         <Home className="w-4 h-4" aria-hidden="true" />
       </a>
@@ -219,7 +209,6 @@ export const Lnb: React.FC<{ active: MenuKey; subs?: Partial<Record<MenuKey, Lnb
     {!STANDALONE && (
       <div className="mt-6 rounded-[10px] border border-[var(--nr-line)] px-4 py-4 text-[13px] text-slate-600">
         <p className="font-bold text-slate-800">내부망에서 보기</p>
-        <p className="mt-1">HTML 파일 하나. 열 때마다 구글 시트에서 최신 일정을 읽음</p>
         <div className="mt-3"><DownloadButton variant="block" /></div>
       </div>
     )}
@@ -234,37 +223,36 @@ export const Lnb: React.FC<{ active: MenuKey; subs?: Partial<Record<MenuKey, Lnb
 
 export const SubLayout: React.FC<{ lnb: React.ReactNode; trail: string[]; children: React.ReactNode }> = ({ lnb, trail, children }) => (
   <div className="relative flex-1">
-    <div aria-hidden="true" className="absolute inset-x-0 top-0 h-12 lg:h-[100px] bg-[var(--nr-band)]" />
+    <div aria-hidden="true" className="hidden sm:block absolute inset-x-0 top-0 h-12 lg:h-[100px] bg-[var(--nr-band)]" />
     <div className={`relative ${BOX} lg:pt-10 flex gap-10 min-[1200px]:gap-[60px]`}>
       {lnb}
       <main id="container" tabIndex={-1} className="min-w-0 flex-1 outline-none">
         <Breadcrumb trail={trail} />
-        <div className="pt-6 lg:pt-8">{children}</div>
+        <div className="pt-5 sm:pt-6 lg:pt-8">{children}</div>
       </main>
     </div>
   </div>
 );
 
 export const PageTitle: React.FC<{ children: React.ReactNode; desc?: React.ReactNode; right?: React.ReactNode }> = ({ children, desc, right }) => (
-  <div className="border-b border-[var(--nr-line)] pb-5 lg:pt-2">
+  <div className="border-b border-[var(--nr-line)] pb-3 sm:pb-5 lg:pt-2">
     <div className="flex flex-wrap items-end justify-between gap-3">
-      <h1 className="nr-title text-[28px] sm:text-[36px] leading-tight text-black">{children}</h1>
+      <h1 className="nr-title text-[24px] sm:text-[36px] leading-tight text-black">{children}</h1>
       {right}
     </div>
-    {desc && <p className="mt-2 text-[15px] text-slate-600">{desc}</p>}
+    {desc && <p className="hidden sm:block mt-2 text-[15px] text-slate-600">{desc}</p>}
   </div>
 );
 
 export const SiteFooter: React.FC = () => (
-  <footer className="mt-16 bg-[#f7f8fa] border-t border-[var(--nr-line)] jbe-noprint">
-    <div className={`${BOX} py-8 text-[14px] text-slate-600 space-y-2`}>
+  <footer className="mt-10 sm:mt-16 bg-[#f7f8fa] border-t border-[var(--nr-line)] jbe-noprint">
+    <div className={`${BOX} py-6 sm:py-8 text-[13px] sm:text-[14px] text-slate-600 space-y-2`}>
       <p className="nr-title text-[18px] text-[#002f63]">도의회 회의운영 달력</p>
-      <p>전북특별자치도의회 회기와 교육위원회·본회의·예결특위(교육청 소관) 일정을 교육청 직원이 한눈에 보도록 모은 비공식 업무지원 화면</p>
-      {STANDALONE && <p className="font-bold text-slate-800">내부망용 파일 — 열 때마다 구글 시트에서 최신 일정을 읽음</p>}
+      <p className="hidden sm:block">전북특별자치도의회 회기와 교육위원회·본회의·예결특위(교육청 소관) 일정을 교육청 직원이 한눈에 보도록 모은 비공식 업무지원 화면</p>
       <p>
         <b className="text-slate-800">담당</b> 정책기획과 빅데이터담당 · <b className="text-slate-800">성격</b> 비공식 · 일정 확정은 도의회 원문 기준
       </p>
-      <p className="pt-3 border-t border-[var(--nr-line)] text-[13px] text-slate-500">
+      <p className="hidden sm:block pt-3 border-t border-[var(--nr-line)] text-[13px] text-slate-500">
         자료 출처 — 전북특별자치도의회 누리집{' '}
         <a href={MONTHLY} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[var(--nr-p3)]">월간 의사일정</a>,{' '}
         <a href={BOARD_PLAN} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[var(--nr-p3)]">의사일정 게시판</a>,{' '}
