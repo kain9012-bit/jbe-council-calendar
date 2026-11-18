@@ -1,13 +1,5 @@
 {
- "checked": "2026-11-18T16:56+09:00",
- "status": "warn",
- "items": [
-  {
-   "level": "warn",
-   "area": "일일회의운영상황",
-   "msg": "오늘 회의 계획이 있는데 당일 운영상황이 목록에 없음 — 미게시 또는 목록 구조 변경",
-   "link": "https://www.jbstatecouncil.jeonbuk.kr/jbassem/board/24",
-   "notify": false
-  }
- ]
+ "checked": "2026-11-19T02:32+09:00",
+ "status": "ok",
+ "items": []
 }
